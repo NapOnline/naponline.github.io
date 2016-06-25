@@ -1,7 +1,7 @@
 $(function() {
   var url = 'https://api.naponline.net/commute?address_hash=07d72756aed4a5eeb114ba34b9926777&format=hc'
   $.getJSON(url, function(data) {
-    $('#container').highcharts({
+    $('#towork').highcharts({
       chart: {
         zoomType: 'x'
       },
@@ -61,7 +61,7 @@ $(function() {
 $(function() {
   var url = 'https://api.naponline.net/commute?address_hash=35d8a61127c303f274b13ba628be33e7&format=hc'
   $.getJSON(url, function(data) {
-    $('#container').highcharts({
+    $('#tohome').highcharts({
       chart: {
         zoomType: 'x'
       },
