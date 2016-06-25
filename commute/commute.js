@@ -137,7 +137,7 @@ $(function() {
       },
       series: [{
         type: 'area',
-        name: 'Home to Work',
+        name: 'Work to Home',
         data: data.series[0].data
       }]
     });
