@@ -22,12 +22,13 @@ Highcharts.theme = {
          ]
       },
       style: {
-         fontFamily: "'Unica One', sans-serif"
+         fontFamily: "sans-serif"
       },
       plotBorderColor: '#606063'
    },
    title: {
       style: {
+         fontFamily: "'Unica One', sans-serif",
          color: '#E0E0E3',
          textTransform: 'uppercase',
          fontSize: '20px'
@@ -35,6 +36,7 @@ Highcharts.theme = {
    },
    subtitle: {
       style: {
+         fontFamily: "'Unica One', sans-serif",
          color: '#E0E0E3',
          textTransform: 'uppercase'
       }
