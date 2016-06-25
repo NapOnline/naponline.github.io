@@ -1,6 +1,9 @@
 $(function() {
   var url = 'https://api.naponline.net/commute?address_hash=07d72756aed4a5eeb114ba34b9926777&format=hc'
   $.getJSON(url, function(data) {
+    var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
+    var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
+    var subtitle = latestCommute + ' minutes @ ' + latestTime
     $('#towork').highcharts({
       chart: {
         zoomType: 'x'
@@ -9,8 +12,7 @@ $(function() {
         text: 'Commute to Work in Traffic'
       },
       subtitle: {
-        text: document.ontouchstart === undefined ?
-          'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+        text: subtitle
       },
       xAxis: {
         type: 'datetime'
@@ -61,6 +63,9 @@ $(function() {
 $(function() {
   var url = 'https://api.naponline.net/commute?address_hash=35d8a61127c303f274b13ba628be33e7&format=hc'
   $.getJSON(url, function(data) {
+    var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
+    var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
+    var subtitle = latestCommute + ' minutes @ ' + latestTime
     $('#tohome').highcharts({
       chart: {
         zoomType: 'x'
@@ -69,8 +74,7 @@ $(function() {
         text: 'Commute Home in Traffic'
       },
       subtitle: {
-        text: document.ontouchstart === undefined ?
-          'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+        text: subtitle
       },
       xAxis: {
         type: 'datetime'
