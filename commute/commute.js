@@ -25,7 +25,13 @@ $(function() {
       yAxis: {
         title: {
           text: 'Minutes'
-        }
+        },
+        plotLines: [{
+            value: 60,
+            color: 'red',
+            dashStyle: 'shortdash',
+            width: 3
+        }]
       },
       legend: {
         enabled: false
@@ -92,7 +98,13 @@ $(function() {
       yAxis: {
         title: {
           text: 'Minutes'
-        }
+        },
+        plotLines: [{
+            value: 60,
+            color: 'red',
+            dashStyle: 'shortdash',
+            width: 3
+        }]
       },
       legend: {
         enabled: false
