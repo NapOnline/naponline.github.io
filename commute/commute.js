@@ -4,6 +4,11 @@ $(function() {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
     var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
     var subtitle = latestCommute + ' minutes @ ' + latestTime
+    Highcharts.setOptions({
+        global: {
+            useUTC: false
+        }
+    });
     $('#towork').highcharts({
       chart: {
         zoomType: 'x'
@@ -66,6 +71,11 @@ $(function() {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
     var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
     var subtitle = latestCommute + ' minutes @ ' + latestTime
+    Highcharts.setOptions({
+        global: {
+            useUTC: false
+        }
+    });
     $('#tohome').highcharts({
       chart: {
         zoomType: 'x'
