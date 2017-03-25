@@ -1,0 +1,9 @@
+---
+markdown: kramdown
+
+title: NapOnline
+subtitle: Welcome to NapOnline
+
+highlighter: rouge
+
+exclude: ['README.md', 'Gemfile.lock', 'Gemfile', 'Rakefile']

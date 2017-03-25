@@ -1,0 +1,5 @@
+---
+- name: >
+    "ip address "
+    "[link=https://api.naponline.net/ip](text)[/link]"
+  description: AWS API Gateway

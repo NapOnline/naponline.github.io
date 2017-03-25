@@ -8,7 +8,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
-    <title>NapOnline</title>
+    <title>{{ site.title }}</title>
     <style>
         a {
             text-decoration: none;
@@ -25,15 +25,25 @@
 
     <header>
       <div class="container">
-        <h1>NapOnline</h1>
+        <h1>{{ site.title }}</h1>
         <h2></h2>
       </div>
     </header>
 
     <div class="container">
       <section id="main_content">
-        <h3><a id="welcome-to-naponline" class="anchor" href="#welcome-to-naponline" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to NapOnline</h3>
+        <h3>
+          <a id="welcome-to-naponline" class="anchor" href="#welcome-to-naponline" aria-hidden="true">
+            <span class="octicon octicon-link"></span>
+          </a>
+          {{ site.subtitle }}</h3>
         <ul>
+          {% for p in site.data.projects %}
+            <li>
+              {{ p.name }}
+              <div class="note">{{ p.description }}</div>
+            </li>
+          {% endfor %}
             <li>
                 <a href="https://api.naponline.net/ip">ip address (text)</a>
                 &nbsp;|&nbsp;
