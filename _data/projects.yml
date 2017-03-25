@@ -1,4 +1,13 @@
 ---
+- name: powerbash
+  link: https://powerbash.org/
+  description: a fast, purley bash powerline-style bash prompt
+  github: https://github.com/napalm255/powerbash
+
+- name: powertmux
+  link: https://powertmux.org/
+  github: https://github.com/napalm255/powertmux
+  `
 - name: ip address (text)
   link: https://api.naponline.net/ip
   description: AWS API Gateway
