@@ -8,7 +8,7 @@
   link: https://powertmux.org/
   description: a customized and themed tmux configuration
   github: https://github.com/napalm255/powertmux
-  `
+
 - name: ip address (text)
   link: https://api.naponline.net/ip
   description: AWS API Gateway
