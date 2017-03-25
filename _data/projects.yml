@@ -1,7 +1,9 @@
 ---
-- name: >
-    ip address
-    <a href="https://api.naponline.net/ip">(text)</a>
-    &nbsp;|&nbsp;
-    <a href="https://api.naponline.net/ip/details">(json)</a>
+- name: ip address (text)
+  link: https://api.naponline.net/ip
   description: AWS API Gateway
+
+- name: ip subnet calculator
+  link: https://api.naponline.net/ipcalc
+  description: AWS API Gateway + Lambda Service
+  github: https://github.com/napalm255/lambda_ipcalc

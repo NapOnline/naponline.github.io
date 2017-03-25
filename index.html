@@ -44,8 +44,9 @@
         <ul>
           {% for p in site.data.projects %}
             <li>
-              {{ p.name }}
+              <a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">{{ p.description }}</div>
+              <div class="note"><a href="{{ p.github }}">Find on GitHub</a></div>
             </li>
           {% endfor %}
             <li>
