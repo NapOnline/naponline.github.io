@@ -43,8 +43,7 @@
           {{ site.subtitle }}</h3>
         <ul>
           {% for p in site.data.projects %}
-            <li>
-              <a href="{{ p.link }}">{{ p.name }}</a>
+            <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">{{ p.description }}</div>
               {% if p.github %}
               <div class="note"><a href="{{ p.github }}">Find on GitHub</a></div>
