@@ -44,10 +44,11 @@
         <ul>
           {% for p in site.data.projects %}
             <li><a href="{{ p.link }}">{{ p.name }}</a>
-              <div class="note">{{ p.description }}</div>
+              <div class="note">{{ p.description }}
               {% if p.github %}
-              <div class="note"><a href="{{ p.github }}">Find on GitHub</a></div>
+              <a href="{{ p.github }}" title="Find on GitHub"><img src="images/github-logo.png"></a>
               {% endif %}
+              </div>
             </li>
           {% endfor %}
             <li>
