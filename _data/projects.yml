@@ -3,6 +3,10 @@
   link: https://api.naponline.net/ip
   description: AWS API Gateway
 
+- name: ip address (json)
+  link: https://api.naponline.net/ip/details
+  description: AWS API Gateway
+
 - name: ip subnet calculator
   link: https://api.naponline.net/ipcalc
   description: AWS API Gateway + Lambda Service
