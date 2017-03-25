@@ -1,5 +1,7 @@
 ---
 - name: >
-    "ip address "
-    "[link=https://api.naponline.net/ip](text)[/link]"
+    ip address
+    <a href="https://api.naponline.net/ip">(text)</a>
+    &nbsp;|&nbsp;
+    <a href="https://api.naponline.net/ip/details">(json)</a>
   description: AWS API Gateway
