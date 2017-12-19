@@ -1,0 +1,57 @@
+---
+---
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='UTF-8'>
+    <title>{{ site.title }} / IP Address</title>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="author" content="{{ site.name }}">
+    <meta name="description" content="{{ site.description }}">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/print.css" media="print">
+
+    <style>
+        a {
+            text-decoration: none;
+            color: #b5e853;
+        }
+        a:link {
+            text-decoration: none;
+            color: #b5e853;
+        }
+        a:visited {
+            text-decoration: none;
+            color: #b5e853;
+        }
+        .note {
+            font-style: italic;
+            font-size: 0.875em;
+            text-decoration: none;
+        }
+    </style>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="ip.js"></script>
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1><a href="/">{{ site.title }}</a>&nbsp;/&nbsp;IP Address</h1>
+        <h2><a href="https://api.naponline.net/ip">{text}</a>&nbsp;|&nbsp;<a href="https:/api.naponline.net/ip/details">{json}</a></h2>
+      </div>
+    </header>
+
+    <div style="width:95%; margin:10px auto;">
+      <div id="ip_address" style="min-width: 310px; height: 400px; margin: 0 auto; font-size: 50px;"></div>
+    </div>
+
+  </body>
+</html>
