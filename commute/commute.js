@@ -1,5 +1,5 @@
 $(function() {
-  var url = 'https://api.naponline.net/commute?address_hash=07d72756aed4a5eeb114ba34b9926777&format=hc'
+  var url = 'https://api.naponline.net/commute'
   $.getJSON(url, function(data) {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
     var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
@@ -72,7 +72,7 @@ $(function() {
 });
 
 $(function() {
-  var url = 'https://api.naponline.net/commute?address_hash=35d8a61127c303f274b13ba628be33e7&format=hc'
+  var url = 'https://api.naponline.net/commute'
   $.getJSON(url, function(data) {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
     var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
