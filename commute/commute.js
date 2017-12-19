@@ -1,7 +1,6 @@
 $(function() {
   var url = 'https://api.naponline.net/commute'
-  var jsonData = {"origin": "org",
-                  "destination": "dst"}
+  var jsonData = '{"origin": "org", "destination": "dst"}'
   $.post(url, jsonData, function(data, textStatus) {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
     var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
