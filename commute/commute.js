@@ -6,7 +6,7 @@ $(function() {
     var subtitle = latestCommute + ' minutes @ ' + latestTime
     Highcharts.setOptions({
         global: {
-            useUTC: true
+            useUTC: false
         }
     });
     $('#towork').highcharts({
