@@ -1,6 +1,8 @@
 $(function() {
   var url = 'https://api.naponline.net/commute'
-  $.getJSON(url, function(data) {
+  var jsonData = {"origin": "org",
+                  "destination": "dst"}
+  $.post(url, jsonData, function(data, textStatus) {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
     var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
     var subtitle = latestCommute + ' minutes @ ' + latestTime
@@ -69,7 +71,7 @@ $(function() {
         data: data.series[0].data
       }]
     });
-  });
+  }, "json");
 });
 
 // $(function() {
