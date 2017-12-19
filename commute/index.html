@@ -1,14 +1,52 @@
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
-<script src="theme.js"></script>
-<script src="commute.js"></script>
+---
+---
 
+<!DOCTYPE html>
 <html>
-  <title></title>
-  <body style="background-color:#000;">
-    <div id="towork" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-    <div id="tohome" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+  <head>
+    <meta charset='UTF-8'>
+    <title>{{ site.title }}</title>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="author" content="{{ site.name }}">
+    <meta name="description" content="{{ site.description }}">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <style>
+        a {
+            text-decoration: none;
+        }
+        .note {
+            font-style: italic;
+            font-size: 0.875em;
+            text-decoration: none;
+        }
+    </style>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="theme.js"></script>
+    <script src="commute.js"></script>
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>{{ site.title }}</h1>
+        <h2></h2>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <div id="towork" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+        <div id="tohome" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+      </section>
+    </div>
+
   </body>
 </html>
-
