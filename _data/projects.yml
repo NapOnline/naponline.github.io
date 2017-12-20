@@ -14,7 +14,7 @@
   description: AWS API Gateway
 
 - name: ip subnet calculator
-  link: https://api.naponline.net/ipcalc
+  link: https://naponline.net/ipcalc
   description: AWS API Gateway + Lambda
   github: https://github.com/napalm255/lambda_ipcalc
 
