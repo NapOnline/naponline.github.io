@@ -7,7 +7,7 @@ $(function() {
 
 $(function() {
   var url = 'https://api.naponline.net/ip/details'
-  $.get(url, function(data) {
-    $('#ip_address_json').html(data)
-  }, "text");
+  $.getJSON(url, '', function(data) {
+    $('#ip_address_json').html(JSON.stringify(data))
+  });
 });
