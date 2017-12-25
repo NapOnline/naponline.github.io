@@ -7,9 +7,9 @@ $(function() {
   // var commuteData = null
   $.post(url, jsonData, function(data, textStatus) {
     var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
-    var latestCommute = data.series[0].data[data.series[0].data.length-1][1]
-    var subtitle = latestCommute + ' minutes @ ' + latestTime
-    var commuteData = data
+    var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
+    var subtitle = latestCommute + ' minutes @ ' + latestTime;
+    var commuteData = data;
   }, "json");
   Highcharts.setOptions({
       global: {
