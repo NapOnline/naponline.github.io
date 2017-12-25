@@ -40,6 +40,32 @@ $(function() {
         enabled: false
       },
       rangeSelector: {
+        buttons: [{
+            type: 'hour',
+            count: 12,
+            text: '12H'
+        }, {
+            type: 'day',
+            count: 1,
+            text: '1D'
+        }, {
+            type: 'day',
+            count: 7,
+            text: '7D'
+        }, {
+            type: 'month',
+            count: 1,
+            text: '1M'
+        }, {
+            type: 'month',
+            count: 3,
+            text: '3M'
+        }, {
+            type: 'all',
+            count: 1,
+            text: 'All'
+        }],
+        inputEnabled: true,
         selected: 1
       },
       plotOptions: {
