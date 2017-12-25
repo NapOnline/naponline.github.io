@@ -1,27 +1,29 @@
-var url = 'https://api.naponline.net/commute'
-var graphs = {
-  "towork": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
-  "tohome": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}'
-}
-$.each(graphs, function(key, value) {
-  $(function() {
+$(function() {
+  var url = 'https://api.naponline.net/commute'
+  var graphs = {
+    "towork": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
+    "tohome": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}'
+  }
+  $.each(graphs, function(key, value) {
     var latestTime = null
     var latestCommute = null
     var subtitle = null
     var commuteData = null
+
     $.post(url, value, function(data, textStatus) {
       latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
       latestCommute = data.series[0].data[data.series[0].data.length-1][1];
       subtitle = latestCommute + ' minutes @ ' + latestTime;
       commuteData = data;
     }, "json");
+
     Highcharts.setOptions({
         global: {
             useUTC: false,
             timezone: "US/Eastern"
         }
     });
-    // $('#towork').highcharts({
+
     Highcharts.stockChart(key, {
       chart: {
         zoomType: 'x'
