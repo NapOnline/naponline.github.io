@@ -1,6 +1,6 @@
 var url = 'https://api.naponline.net/commute'
 var graphs = {
-  "towork": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}'
+  "towork": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
   "tohome": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}'
 }
 $.each(graphs, function(key, value) {
@@ -22,7 +22,7 @@ $.each(graphs, function(key, value) {
         }
     });
     // $('#towork').highcharts({
-    Highcharts.stockChart('towork', {
+    Highcharts.stockChart(key, {
       chart: {
         zoomType: 'x'
       },
