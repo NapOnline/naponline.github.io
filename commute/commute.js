@@ -1,11 +1,19 @@
 $(function() {
   var url = 'https://api.naponline.net/commute'
   var graphs = {
-    "towork": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
-    "tohome": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}'
+    "towork": {
+      "json": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
+      "title": "Commute to Work in Traffic",
+      "seriesName": "Home to Work"
+    },
+    "tohome": {
+      "json": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}',
+      "title": "Commute Home in Traffic",
+      "seriesName": "Work to Home"
+    }
   }
-  $.each(graphs, function(graph, jsonOrgDst) {
-    $.post(url, jsonOrgDst, function(data, textStatus) {
+  $.each(graphs, function(graph, value) {
+    $.post(url, value.json, function(data, textStatus) {
       var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
       var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
       var subtitle = latestCommute + ' minutes @ ' + latestTime;
@@ -22,7 +30,7 @@ $(function() {
           zoomType: 'x'
         },
         title: {
-          text: 'Commute to Work in Traffic'
+          text: value.title
         },
         subtitle: {
           text: subtitle
@@ -101,7 +109,7 @@ $(function() {
         },
         series: [{
           type: 'area',
-          name: 'Home to Work',
+          name: value.seriesName,
           data: data.series[0].data
         }]
       });
