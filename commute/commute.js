@@ -1,15 +1,15 @@
+var url = 'https://api.naponline.net/commute'
 $(function() {
-  var url = 'https://api.naponline.net/commute'
   var jsonData = '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}'
-  // var latestTime = null
-  // var latestCommute = null
-  // var subtitle = null
-  // var commuteData = null
+  var latestTime = null
+  var latestCommute = null
+  var subtitle = null
+  var commuteData = null
   $.post(url, jsonData, function(data, textStatus) {
-    var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
-    var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
-    var subtitle = latestCommute + ' minutes @ ' + latestTime;
-    var commuteData = data;
+    latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
+    latestCommute = data.series[0].data[data.series[0].data.length-1][1];
+    subtitle = latestCommute + ' minutes @ ' + latestTime;
+    commuteData = data;
   }, "json");
   Highcharts.setOptions({
       global: {
