@@ -4,13 +4,13 @@ $(function() {
     "towork": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
     "tohome": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}'
   }
-  $.each(graphs, function(key, value) {
+  $.each(graphs, function(graph, jsonOrgDst) {
     var latestTime = null
     var latestCommute = null
     var subtitle = null
     var commuteData = null
 
-    $.post(url, value, function(data, textStatus) {
+    $.post(url, jsonOrgDst, function(data, textStatus) {
       latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
       latestCommute = data.series[0].data[data.series[0].data.length-1][1];
       subtitle = latestCommute + ' minutes @ ' + latestTime;
@@ -24,7 +24,7 @@ $(function() {
         }
     });
 
-    Highcharts.stockChart(key, {
+    Highcharts.stockChart(graph, {
       chart: {
         zoomType: 'x'
       },
