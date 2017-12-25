@@ -11,7 +11,8 @@ $(function() {
             timezone: "US/Eastern"
         }
     });
-    $('#towork').highcharts({
+    // $('#towork').highcharts({
+    Highcharts.stockChart('towork', {
       chart: {
         zoomType: 'x'
       },
