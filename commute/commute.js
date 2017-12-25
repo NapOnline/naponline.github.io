@@ -38,6 +38,23 @@ $(function() {
       legend: {
         enabled: false
       },
+      rangeSelector: {
+        buttons: [{
+          count: 1,
+          type: 'day',
+          text: '1D'
+        }, {
+          count: 7,
+          type: 'day',
+          text: '7D'
+        }, {
+          count: 1,
+          type: 'month',
+          text: '1M'
+        }],
+        inputEnabled: false,
+        selected: 0
+      },
       plotOptions: {
         area: {
           fillColor: {
