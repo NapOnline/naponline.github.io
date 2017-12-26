@@ -1,22 +1,26 @@
 $(function() {
   var url = 'https://api.naponline.net/commute'
+  var refresh = 2.5  // in minutes
   var graphs = {
     "towork": {
       "json": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
       "title": "Commute to Work in Traffic",
-      "seriesName": "Home to Work"
+      "seriesName": "Home to Work",
+      "divCurrent": "#toworkCurrent"
     },
     "tohome": {
       "json": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}',
       "title": "Commute Home in Traffic",
-      "seriesName": "Work to Home"
+      "seriesName": "Work to Home",
+      "divCurrent": "#tohomeCurrent"
     }
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(data, textStatus) {
       var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
       var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
-      var subtitle = latestCommute + ' minutes @ ' + latestTime;
+      $(value.divCurrent + '_min').html(latestCommute + 'm')
+      $('#timestampCurrent').html(latestTime)
 
       Highcharts.setOptions({
           global: {
@@ -27,13 +31,19 @@ $(function() {
 
       Highcharts.stockChart(graph, {
         chart: {
-          zoomType: 'x'
+          events: {
+            load: function () {
+              var series = this.series[0];
+              setInterval(function () {
+                  $.post(url, value.json, function(json) {
+                    series.setData(json.series[0].data, true);
+                  }, "json");
+              }, refresh * 60000.0);
+            }
+          }
         },
         title: {
           text: value.title
-        },
-        subtitle: {
-          text: subtitle
         },
         xAxis: {
           type: 'datetime'
@@ -111,6 +121,11 @@ $(function() {
           type: 'area',
           name: value.seriesName,
           data: data.series[0].data
+    // $.ajaxSetup({async:false});
+    // $.post(url, value.json, function(json) {
+    //   data = json;
+    // });
+    // $.ajaxSetup({async:true});
         }]
       });
     }, "json");

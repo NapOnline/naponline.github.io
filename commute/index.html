@@ -33,6 +33,7 @@
     </style>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>-->
     <script src="https://code.highcharts.com/stock/highstock.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="theme.js"></script>
@@ -45,7 +46,11 @@
     <header>
       <div class="container">
         <h1><a href="/">{{ site.title }}</a>&nbsp;/&nbsp;Commute</h1>
-        <h2></h2>
+        <h2>
+          <span style="color: #b5e853;">{&nbsp;<span id="toworkCurrent_min" style="text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">XX</span> to work&nbsp;}</span>
+          <span>&nbsp;|&nbsp;</span>
+          <span style="color: #b5e853;">{&nbsp;<span id="tohomeCurrent_min" style="color: #b5e853; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">XX</span> to home&nbsp;}</span>
+        </h2>
       </div>
     </header>
 
