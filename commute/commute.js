@@ -19,8 +19,7 @@ $(function() {
     $.post(url, value.json, function(data, textStatus) {
       var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
       var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
-      $(value.divCurrent + '_min').html(latestCommute + 'm')
-      $('#timestampCurrent').html(latestTime)
+      $(value.divCurrent).html(latestCommute + 'm')
 
       Highcharts.setOptions({
           global: {
@@ -37,6 +36,8 @@ $(function() {
               setInterval(function () {
                   $.post(url, value.json, function(json) {
                     series.setData(json.series[0].data, true);
+                    var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
+                    $(value.divCurrent).html(latestCommute + 'm')
                   }, "json");
               }, refresh * 60000.0);
             }
