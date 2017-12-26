@@ -33,6 +33,19 @@
         .current {
             color: #b5e853;
         }
+        .line {
+            color: #b5e853;
+            font-size: 14px;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(104, 182, 255, 0.5);
+            padding: 20px 0 20px 0;
+            margin: auto;
+        }
+        .graph {
+            min-width: 310px;
+            height: 400px;
+            margin: 0 auto;
+        }
 
     </style>
 
@@ -59,13 +72,13 @@
     </header>
 
     <div style="width:95%; margin:10px auto;">
-      <div id="towork" style="min-width: 310px; height: 400px; margin: 0 auto">Loading...</div>
-      <div style="font-size: 14px; color: #b5e853; padding: 20px 0 20px 0; margin: auto; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">
+      <div id="towork" class="graph">Loading...</div>
+      <div class="line">
         &nbsp;--------&nbsp;
         <span id="timestamp"></span>
         &nbsp;--------&nbsp;
       </div>
-      <div id="tohome" style="min-width: 310px; height: 400px; margin: 0 auto">Loading...</div>
+      <div id="tohome" class="graph">Loading...</div>
     </div>
 
   </body>
