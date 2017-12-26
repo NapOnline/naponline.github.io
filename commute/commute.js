@@ -74,6 +74,10 @@ $(function() {
               text: '1D'
           }, {
               type: 'day',
+              count: 3,
+              text: '3D'
+          }, {
+              type: 'day',
               count: 7,
               text: '7D'
           }, {
