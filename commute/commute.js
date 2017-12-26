@@ -3,26 +3,25 @@ $(function() {
   var refresh = 2.5  // in minutes
   var graphs = {
     "towork": {
-      "json": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
+      "json": '{"name": "Home to Work", "type": "area", "origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
       "title": "Commute to Work in Traffic",
-      "seriesName": "Home to Work",
       "divCurrent": "#toworkCurrent",
       "divCurrentSuffix": "to work"
     },
     "tohome": {
-      "json": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}',
+      "json": '{"name": "Work to Home", "type": "area", "destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}',
       "title": "Commute Home in Traffic",
-      "seriesName": "Work to Home",
       "divCurrent": "#tohomeCurrent",
       "divCurrentSuffix": "to home"
     }
   }
   $.each(graphs, function(graph, value) {
-    $.post(url, value.json, function(data, textStatus) {
-      var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
-      var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
+    $.post(url, value.json, function(json, textStatus) {
+      // var latestTime = new Date(json.series[0].data[json.series[0].data.length-1][0]);
+      // $('#timestamp').html('updated @ ' + latestTime.toString().toLowerCase());
+      var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
       $(value.divCurrent).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
-      $('#timestamp').html('updated @ ' + latestTime.toString().toLowerCase());
+      series = json.series
 
       Highcharts.setOptions({
           global: {
@@ -121,16 +120,7 @@ $(function() {
             threshold: null
           }
         },
-        series: [{
-          type: 'area',
-          name: value.seriesName,
-          data: data.series[0].data
-    // $.ajaxSetup({async:false});
-    // $.post(url, value.json, function(json) {
-    //   data = json;
-    // });
-    // $.ajaxSetup({async:true});
-        }]
+        series: series
       });
     }, "json");
   });
