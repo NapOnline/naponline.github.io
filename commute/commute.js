@@ -3,22 +3,30 @@ $(function() {
   var refresh = 2.5  // in minutes
   var graphs = {
     "towork": {
-      "json": '{"name": "Home to Work", "type": "area", "origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
+      "json": { "name": "Home to Work",
+                "type": "area",
+                "origin": "611 Himes Avenue, Frederick, MD 21703",
+                "destination": "1300 17th Street N., Arlington, VA 22209"
+              },
       "title": "Commute to Work in Traffic",
-      "divCurrent": "#toworkCurrent",
+      "divCurrentId": "#toworkCurrent",
       "divCurrentSuffix": "to work"
     },
     "tohome": {
-      "json": '{"name": "Work to Home", "type": "area", "destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}',
+      "json": { "name": "Work to Home",
+                "type": "area",
+                "origin": "1300 17th Street N., Arlington, VA 22209",
+                "destination": "611 Himes Avenue, Frederick, MD 21703"
+              },
       "title": "Commute Home in Traffic",
-      "divCurrent": "#tohomeCurrent",
+      "divCurrentId": "#tohomeCurrent",
       "divCurrentSuffix": "to home"
     }
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json, textStatus) {
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
-      $(value.divCurrent).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
+      $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
       series = json.series
 
       Highcharts.setOptions({
@@ -36,8 +44,8 @@ $(function() {
               setInterval(function () {
                   $.post(url, value.json, function(json) {
                     series.setData(json.series[0].data, true);
-                    var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
-                    $(value.divCurrent).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
+                    var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
+                    $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
                   }, "json");
               }, refresh * 60000.0);
             }
