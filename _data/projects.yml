@@ -10,15 +10,15 @@
   github: https://github.com/napalm255/powertmux
 
 - name: ip address
-  link: https://naponline.net/ip
+  link: /ip
   description: AWS API Gateway
 
 - name: ip subnet calculator
-  link: https://naponline.net/ipcalc
+  link: /ipcalc
   description: AWS API Gateway + Lambda
   github: https://github.com/napalm255/ip-subnet-calculator
 
 - name: commute tracker
-  link: https://naponline.net/commute
+  link: /commute
   description: AWS API Gateway + Lambda + SNS + Aurora
   github: https://github.com/napalm255/commute-data
