@@ -17,8 +17,6 @@ $(function() {
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json, textStatus) {
-      // var latestTime = new Date(json.series[0].data[json.series[0].data.length-1][0]);
-      // $('#timestamp').html('updated @ ' + latestTime.toString().toLowerCase());
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
       $(value.divCurrent).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
       series = json.series
