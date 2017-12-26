@@ -37,7 +37,7 @@ $(function() {
                   $.post(url, value.json, function(json) {
                     series.setData(json.series[0].data, true);
                     var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
-                    $(value.divCurrent).html(latestCommute + 'm')
+                    $(value.divCurrent).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
                   }, "json");
               }, refresh * 60000.0);
             }
