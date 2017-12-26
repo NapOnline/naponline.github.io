@@ -6,20 +6,23 @@ $(function() {
       "json": '{"origin": "611 Himes Avenue, Frederick, MD 21703", "destination": "1300 17th Street N., Arlington, VA 22209"}',
       "title": "Commute to Work in Traffic",
       "seriesName": "Home to Work",
-      "divCurrent": "#toworkCurrent"
+      "divCurrent": "#toworkCurrent",
+      "divCurrentSuffix": "to work"
     },
     "tohome": {
       "json": '{"destination": "611 Himes Avenue, Frederick, MD 21703", "origin": "1300 17th Street N., Arlington, VA 22209"}',
       "title": "Commute Home in Traffic",
       "seriesName": "Work to Home",
-      "divCurrent": "#tohomeCurrent"
+      "divCurrent": "#tohomeCurrent",
+      "divCurrentSuffix": "to home"
     }
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(data, textStatus) {
       var latestTime = new Date(data.series[0].data[data.series[0].data.length-1][0]);
       var latestCommute = data.series[0].data[data.series[0].data.length-1][1];
-      $(value.divCurrent).html(latestCommute + 'm')
+      $(value.divCurrent).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
+      $('#timestamp').html('updated @ ' + latestTime.toString().toLowerCase());
 
       Highcharts.setOptions({
           global: {

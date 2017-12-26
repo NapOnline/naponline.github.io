@@ -30,6 +30,10 @@
             font-size: 0.875em;
             text-decoration: none;
         }
+        .current {
+            color: #b5e853;
+        }
+
     </style>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
@@ -47,17 +51,20 @@
       <div class="container">
         <h1><a href="/">{{ site.title }}</a>&nbsp;/&nbsp;Commute</h1>
         <h2>
-          <span style="color: #b5e853;">{&nbsp;<span id="toworkCurrent" style="text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">##m</span> to work&nbsp;}</span>
+          <span class="current"><span id="toworkCurrent">{}</span></span>
           <span>&nbsp;|&nbsp;</span>
-          <span style="color: #b5e853;">{&nbsp;<span id="tohomeCurrent" style="color: #b5e853; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">##m</span> to home&nbsp;}</span>
+          <span class="current"><span id="tohomeCurrent">{}</span></span>
         </h2>
       </div>
     </header>
 
+    <div style="text-align: center; padding: 5px; font-size: 12px;">Last updated @ <span id="timestampCurrent"></span></div>
     <div style="width:95%; margin:10px auto;">
       <div id="towork" style="min-width: 310px; height: 400px; margin: 0 auto">Loading...</div>
       <div style="font-size: 14px; color: #b5e853; padding: 20px 0 20px 0; margin: auto; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">
-        &nbsp;--------------------&nbsp;
+        &nbsp;--------&nbsp;
+        <span id="timestamp"></span>
+        &nbsp;--------&nbsp;
       </div>
       <div id="tohome" style="min-width: 310px; height: 400px; margin: 0 auto">Loading...</div>
     </div>
