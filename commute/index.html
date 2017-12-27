@@ -36,9 +36,17 @@
         .current {
             color: #b5e853;
         }
-        .line {
+        .banner {
             color: #b5e853;
             font-size: 14px;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(104, 182, 255, 0.5);
+            padding: 0 0 15px 0;
+            margin: auto;
+        }
+        .line {
+            color: #b5e853;
+            font-size: 12px;
             text-align: center;
             text-shadow: 0 0 5px rgba(104, 182, 255, 0.5);
             padding: 20px 0 20px 0;
@@ -70,15 +78,16 @@
     <header>
       <div class="container">
         <h1><a href="/">{{ site.title }}</a>&nbsp;/&nbsp;Commute</h1>
-        <h2>
-          <span class="current"><span id="toworkCurrent">{}</span></span>
-          <span>&nbsp;|&nbsp;</span>
-          <span class="current"><span id="tohomeCurrent">{}</span></span>
-        </h2>
+        <h2><a href="stats">{ stats }</a></h2>
       </div>
     </header>
 
     <div style="width:95%; margin:10px auto;">
+      <div class="banner">
+        &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;
+        <span id="toworkCurrent" title="duration to work"></span> &#x1F697; <span id="tohomeCurrent" title="duration to home"></span>
+        &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;
+      </div>
       <div id="towork" class="graph">Loading...</div>
       <div class="line">
         &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;

@@ -30,7 +30,7 @@ $(function() {
       $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
       // latest commute
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
-      $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
+      $(value.divCurrentId).html(latestCommute + 'm ' + value.divCurrentSuffix)
       series = json.series
 
       Highcharts.setOptions({
