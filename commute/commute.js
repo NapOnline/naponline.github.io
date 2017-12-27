@@ -10,6 +10,7 @@ $(function() {
                 "destination": "1300 17th Street N., Arlington, VA 22209"
               },
       "title": "Commute to Work in Traffic",
+      "divCountId": "#workCount",
       "divCurrentId": "#toworkCurrent",
       "divCurrentSuffix": "to work"
     },
@@ -20,16 +21,16 @@ $(function() {
                 "destination": "611 Himes Avenue, Frederick, MD 21703"
               },
       "title": "Commute Home in Traffic",
+      "divCountId": "#homeCount",
       "divCurrentId": "#tohomeCurrent",
       "divCurrentSuffix": "to home"
     }
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json, textStatus) {
-      var endTime = new Date();
-      var diffTime = (endTime - startTime) / 1000;
-      $('#ajaxLoad').html(diffTime + 's');
-
+      // count
+      $(value.divCountId).html(json.count);
+      // latest commute
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
       $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
       series = json.series
@@ -137,6 +138,9 @@ $(function() {
         },
         series: series
       });
+      var endTime = new Date();
+      var diffTime = (endTime - startTime) / 1000;
+      $('#ajaxLoad').html(diffTime + 's');
     }, "json");
   });
 });
