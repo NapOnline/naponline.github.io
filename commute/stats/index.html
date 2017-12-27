@@ -70,16 +70,11 @@
     <header>
       <div class="container">
         <h1><a href="/">{{ site.title }}</a>&nbsp;/&nbsp;Commute</h1>
-        <h2>
-          <span class="current"><span id="toworkCurrent">{}</span></span>
-          <span>&nbsp;|&nbsp;</span>
-          <span class="current"><span id="tohomeCurrent">{}</span></span>
-        </h2>
+        <h2></h2>
       </div>
     </header>
 
     <div style="width:95%; margin:10px auto;">
-      <div id="towork" class="graph">Loading...</div>
       <div class="line">
         &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;
         &#x25b2;&nbsp;<span id="workStats" title="min/max/avg minutes, # records">0</span>
@@ -89,7 +84,6 @@
         <span id="homeStats" title="min/max/avg minutes, # records">0</span>&nbsp;&#x25bc;
         &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;
       </div>
-      <div id="tohome" class="graph">Loading...</div>
     </div>
 
     <footer>
