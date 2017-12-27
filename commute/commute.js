@@ -10,7 +10,7 @@ $(function() {
                 "destination": "1300 17th Street N., Arlington, VA 22209"
               },
       "title": "Commute to Work in Traffic",
-      "divCountId": "#workCount",
+      "divStatsId": "#workStats",
       "divCurrentId": "#toworkCurrent",
       "divCurrentSuffix": "to work"
     },
@@ -21,15 +21,15 @@ $(function() {
                 "destination": "611 Himes Avenue, Frederick, MD 21703"
               },
       "title": "Commute Home in Traffic",
-      "divCountId": "#homeCount",
+      "divStatsId": "#homeStats",
       "divCurrentId": "#tohomeCurrent",
       "divCurrentSuffix": "to home"
     }
   }
   $.each(graphs, function(graph, value) {
-    $.post(url, value.json, function(json, textStatus) {
+    $.post(url, value.json, function(json) {
       // count
-      $(value.divCountId).html(json.count);
+      $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
       // latest commute
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
       $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
@@ -49,9 +49,19 @@ $(function() {
               var series = this.series[0];
               setInterval(function () {
                   $.post(url, value.json, function(json) {
+                    // start time
+                    var startTime = new Date();
+                    // latest data
                     series.setData(json.series[0].data, true);
+                    // count
+                    $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
+                    // latest commute
                     var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
                     $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
+                    // end time
+                    var endTime = new Date();
+                    var diffTime = (endTime - startTime) / 1000;
+                    $('#ajaxLoad').html(diffTime + 's');
                   }, "json");
               }, refresh * 60000.0);
             }
