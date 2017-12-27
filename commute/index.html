@@ -2,6 +2,9 @@
 ---
 
 <!DOCTYPE html>
+<script type="text/javascript">
+  var pageStartTime = new Date();
+</script>
 <html>
   <head>
     <meta charset='UTF-8'>
@@ -46,6 +49,10 @@
             height: 400px;
             margin: 0 auto;
         }
+        footer {
+          text-align: center;
+          padding: 20px;
+        }
 
     </style>
 
@@ -74,10 +81,22 @@
     <div style="width:95%; margin:10px auto;">
       <div id="towork" class="graph">Loading...</div>
       <div class="line">
-        &nbsp;----------------&nbsp;
+        &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;
+        <span id="pageLoad">0.000s</span> &#x231b; <span id="ajaxLoad">0.000s</span>
+        &nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&nbsp;
       </div>
       <div id="tohome" class="graph">Loading...</div>
     </div>
 
+    <footer>
+    </footer>
+
   </body>
 </html>
+<script type="text/javascript">
+  $(function() {
+    var pageEndTime = new Date();
+    var difference = (pageEndTime - pageStartTime) / 1000;
+    $('#pageLoad').html(difference + 's');
+  });
+</script>

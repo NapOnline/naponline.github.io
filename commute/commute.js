@@ -23,8 +23,13 @@ $(function() {
       "divCurrentSuffix": "to home"
     }
   }
+  var startTime = new Date();
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json, textStatus) {
+      var endTime = new Date();
+      var diffTime = (endTime - startTime) / 1000;
+      $('#ajaxLoad').html(diffTime + 's');
+
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
       $(value.divCurrentId).html('{ ' + latestCommute + 'm ' + value.divCurrentSuffix + ' }')
       series = json.series
