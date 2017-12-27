@@ -26,7 +26,7 @@ $(function() {
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json) {
-      // count
+      // stats
       $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
       // latest commute
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
@@ -51,7 +51,7 @@ $(function() {
                     var startTime = new Date();
                     // latest data
                     series.setData(json.series[0].data, true);
-                    // count
+                    // stats
                     $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
                     // latest commute
                     var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
