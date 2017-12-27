@@ -6,9 +6,7 @@ $(function() {
     "towork": {
       "json": { "name": "Home to Work",
                 "type": "area",
-                "id": "Brad-HomeToWork",
-                "origin": "611 Himes Avenue, Frederick, MD 21703",
-                "destination": "1300 17th Street N., Arlington, VA 22209"
+                "id": "Brad-HomeToWork"
               },
       "title": "Commute to Work in Traffic",
       "divStatsId": "#workStats",
@@ -18,9 +16,7 @@ $(function() {
     "tohome": {
       "json": { "name": "Work to Home",
                 "type": "area",
-                "id": "Brad-WorkToHome",
-                "origin": "1300 17th Street N., Arlington, VA 22209",
-                "destination": "611 Himes Avenue, Frederick, MD 21703"
+                "id": "Brad-WorkToHome"
               },
       "title": "Commute Home in Traffic",
       "divStatsId": "#homeStats",
