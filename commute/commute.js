@@ -1,6 +1,7 @@
 $(function() {
+  var startTime = new Date();
   var url = 'https://api.naponline.net/commute'
-  var refresh = 2.5  // in minutes
+  var refresh = 3  // in minutes
   var graphs = {
     "towork": {
       "json": { "name": "Home to Work",
@@ -23,7 +24,6 @@ $(function() {
       "divCurrentSuffix": "to home"
     }
   }
-  var startTime = new Date();
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json, textStatus) {
       var endTime = new Date();
