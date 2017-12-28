@@ -27,7 +27,7 @@ $(function() {
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json) {
       // stats
-      $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
+      $(value.divStatsId).html('#' + json.stats.count);
       // latest commute
       var latestCommute = json.series[0].data[json.series[0].data.length-1][1];
       $(value.divCurrentId).html(latestCommute + 'm ' + value.divCurrentSuffix)
