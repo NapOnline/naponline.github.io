@@ -4,8 +4,9 @@ $(function() {
   var graphs = {
     "towork": {
       "json": { "name": "Home to Work",
-                "type": "area",
-                "id": "Brad-HomeToWork"
+                "type": "column",
+                "id": "Brad-HomeToWork",
+                "fields": "month,harmonic_mean"
               },
       "title": "Commute to Work in Traffic",
       "divStatsId": "#workStats",
@@ -14,8 +15,9 @@ $(function() {
     },
     "tohome": {
       "json": { "name": "Work to Home",
-                "type": "area",
-                "id": "Brad-WorkToHome"
+                "type": "column",
+                "id": "Brad-WorkToHome",
+                "fields": "month,harmonic_mean"
               },
       "title": "Commute Home in Traffic",
       "divStatsId": "#homeStats",
@@ -25,8 +27,43 @@ $(function() {
   }
   $.each(graphs, function(graph, value) {
     $.post(url, value.json, function(json) {
-      // count
-      $(value.divStatsId).html(json.stats.min + '/' + json.stats.max + '/' + json.stats.avg + 'm, #' + json.stats.count);
+      $(value.divStatsId).html(JSON.stringify(json));
+      Highcharts.setOptions({
+          global: {
+              useUTC: false,
+              timezone: "US/Eastern"
+          }
+      });
+      Highcharts.chart(graph, {
+        chart: {
+          type: "column",
+          polar: false,
+          inverted: false
+        },
+        plotOptions: {
+          series: {
+            stacking: "normal",
+            animation: false,
+            dataLabels: {
+              enabled: false
+            }
+          }
+        },
+        title: {
+          text: "OS Usage Stats"
+        },
+        subtitle: {
+          text: ""
+        },
+        exporting: {},
+        series: json.series,
+        legend: {},
+        tooltip: {"shared":false},
+        lang: {},
+        credits: {
+          enabled: true
+        }
+      });
     }, "json");
   });
 });
