@@ -82,6 +82,21 @@
         });
       });
     </script>
+
+    <!-- CHART Camera Support -->
+    <link href="https://vjs.zencdn.net/6.2.0/video-js.min.css" rel="stylesheet" type="text/css">
+    <style>
+            <!-- /* Hide the big play button that normally shows up in the top left corner of the window and is distracting */ -->
+            .video-js .vjs-big-play-button { display:none; }
+    </style>
+
+    <script src="https://vjs.zencdn.net/6.2.0/video.js" type="text/javascript"></script>
+    <script>
+                            // tell it where to load the Flash binary from
+                            videojs.options.flash.swf = "video-js.swf"
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-flash@2/dist/videojs-flash.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.12.2/videojs-contrib-hls.min.js" type="text/javascript"></script>
   </head>
   <body>
 
@@ -95,7 +110,9 @@
       		<div class="dash-unit" style="text-align: center;">
 	      		<dtitle>Cam @ 270 / 109</dtitle>
 	      		<hr>
-            <iframe width="445" height="410" src="http://www.chart.state.md.us/video/video.php?feed=7a00a1dc01250075004d823633235daa"></iframe>
+            <video id="my_video_1" class="video-js vjs-default-skin" controls preload="auto" width="260" height="240"
+                   data-setup='{"autoplay":true, "preload": "auto", "controls": true}'>
+            </video>
 				  </div>
         </div>
 
@@ -596,5 +613,22 @@
       		</div><!-- /row -->
       	</div><!-- /container -->
 	</div><!-- /footerwrap -->
+
+  <!-- CHART Camera Support -->
+  <script>
+    const player = videojs('my_video_1');
+    player.src({
+                src:    'http://170.93.143.139:1935/rtplive/7a00a1dc01250075004d823633235daa/playlist.m3u8',
+                type: 'application/x-mpegURL'
+               },{
+                src:    'rtmp://170.93.143.139:1935/rtplive/7a00a1dc01250075004d823633235daa',
+                type: 'rtmp/mp4'
+               },{
+                src:    'rtsp://170.93.143.139:1935/rtplive/7a00a1dc01250075004d823633235daa',
+                type: 'rtmp/mp4'
+               }
+    );
+  </script>
+
 
 </body></html>
