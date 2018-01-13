@@ -22,3 +22,8 @@
   link: /commute
   description: AWS API Gateway + Lambda + SNS + Aurora
   github: https://github.com/napalm255/commute-data
+
+- name: dynamic dns
+  link: /ddns
+  description: AWS API Gateway + Lambda + Route 53
+  github: https://github.com/napalm255/dynamic-dns
