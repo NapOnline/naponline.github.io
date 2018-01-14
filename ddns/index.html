@@ -30,6 +30,32 @@
             font-size: 0.875em;
             text-decoration: none;
         }
+        .label {
+          font-size: 16px;
+          font-style: bold;
+          display: block;
+          text-decoration: none;
+        }
+        .input {
+          font-size: 16px;
+          font-style: bold;
+          display: block;
+          text-decoration: none;
+        }
+        input {
+          text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: #fff;
+            padding: 7px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
     </style>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
@@ -49,7 +75,19 @@
     <div class="container">
       <section id="main_content">
         <div style="width:95%; margin:10px auto;">
-          <div id="ddns" style="font-size: 50px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)"></div>
+          <div id="key" style="font-size: 50px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">
+            <div class="label">API Access Key</div>
+            <div class="input"><input id="key" type="textbox" size=45></input></div>
+          </div>
+          <p />
+          <div id="record" style="font-size: 50px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">
+            <div class="label">Record Name</div>
+            <div class="input"><input id="name" type="textbox" size=35></input></div>
+          </div>
+          <div id="record" style="font-size: 50px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">
+            <button>update</button>
+          </div>
+          <div id="status"></div>
         </div>
       </section>
     </div>
