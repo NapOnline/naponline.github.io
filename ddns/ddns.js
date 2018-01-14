@@ -1,6 +1,5 @@
 function update() {
   var url = 'https://api.naponline.net/ddns'
-  alert($('#name').val());
   $.ajax({
     url: url,
     type: 'post',
