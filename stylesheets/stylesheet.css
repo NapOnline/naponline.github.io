@@ -125,8 +125,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #main_content ul li .r-name {
-  text-shadow: none;
   color: #b5e853;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1),
+               0 0 5px rgba(181, 232, 83, 0.1),
+               0 0 10px rgba(181, 232, 83, 0.1);
 }
 
 dt {
@@ -179,7 +181,9 @@ div.r-references ul li:before {
 }
 
 div.r-references ul li a {
-  font-size: 10px;
+  font-size: 12px;
+  text-decoration: none;
+  text-shadow: none;
 }
 
 blockquote {
