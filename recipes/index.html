@@ -81,7 +81,7 @@
                 {% if r.references %}
                   <ul>
                     {% for reference in r.references %}
-                      <li><a href="{{ reference.url }}">{{ reference.name }}</a></li>
+                      <li><a href="{{ reference.url }}" target="_blank">{{ reference.name }}</a></li>
                     {% endfor %}
                   </ul>
                 {% endif %}
