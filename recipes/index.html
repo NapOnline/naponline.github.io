@@ -39,8 +39,10 @@
           <a id="welcome-to-naponline" class="anchor" href="#welcome-to-naponline" aria-hidden="true">
             <span class="octicon octicon-link"></span>
           </a>
-          Recipes</h3>
+          Recipes
+        </h3>
         <div class="toc">
+          <h4>Table of Contents</h4>
           <ul>
             {% for r in site.data.recipes %}
             <li><a href="#{{ r.name | slugify }}">{{ r.name }}</a></li>
@@ -77,7 +79,7 @@
                 {% if r.directions %}
                   <ul>
                     {% for direction in r.directions %}
-                      <li>{{ direction }}</li>
+                      <li>{{ direction | newline_to_br }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
