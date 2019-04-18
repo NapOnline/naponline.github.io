@@ -49,7 +49,7 @@
               <div class="r_pictures">
                 {% if r.pictures %}
                   {% for picture in r.pictures %}
-                  <img src="{{ picture.url }}"/>
+                  <img alt="{{ picture.alt }}" src="{{ picture.url }}" width="{{ picture.size.width }}" height="{{ picture.size.height }}" />
                   {% endfor %}
                 {% endif %}
               <div>
