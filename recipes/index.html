@@ -49,7 +49,7 @@
               <div class="r_pictures">
                 {% if r.pictures %}
                   {% for picture in r.pictures %}
-                  <img alt="{{ picture.alt }}" src="{{ picture.url }}" width="{{ picture.size.width }}" height="{{ picture.size.height }}" />
+                  <img class="r_picture" alt="{{ picture.alt }}" src="{{ picture.url }}" width="{{ picture.size.width }}" height="{{ picture.size.height }}" />
                   {% endfor %}
                 {% endif %}
               <div>
@@ -59,7 +59,7 @@
                 {% if r.ingredients %}
                   <ul>
                     {% for ingredient in r.ingredients %}
-                      <li class="ingredient">{{ ingredient }}</li>
+                      <li class="r_ingredient">{{ ingredient }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
@@ -70,7 +70,7 @@
                 {% if r.directions %}
                   <ul>
                     {% for direction in r.directions %}
-                      <li class="direction">{{ direction }}</li>
+                      <li class="r_direction">{{ direction }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
@@ -81,7 +81,7 @@
                 {% if r.references %}
                   <ul>
                     {% for reference in r.references %}
-                      <li class="reference"><a href="{{ reference.url }}">{{ reference.name }}</a></li>
+                      <li class="r_reference"><a href="{{ reference.url }}">{{ reference.name }}</a></li>
                     {% endfor %}
                   </ul>
                 {% endif %}
