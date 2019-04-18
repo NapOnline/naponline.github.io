@@ -1,0 +1,8 @@
+- name: bacon mac and cheese
+  description: simple mac and cheese with bacon
+  ingredients:
+    - 1 lbs elbow noodles
+  directions:
+    - Boil noodles
+  pictures:
+    - images/bacon_mac_and_cheese.png
