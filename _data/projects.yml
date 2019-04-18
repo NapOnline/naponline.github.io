@@ -1,4 +1,8 @@
 ---
+- name: recipes
+  link: /recipes
+  description: simple recipes for geeks
+
 - name: powerbash
   link: https://powerbash.org/
   description: a fast, purley bash powerline-style bash prompt
