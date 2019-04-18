@@ -57,27 +57,33 @@
               <h5>Ingredients</h5>
               <div class="r_ingredients">
                 {% if r.ingredients %}
-                  {% for ingredient in r.ingredients %}
-                    {{ ingredient }}
-                  {% endfor %}
+                  <ul>
+                    {% for ingredient in r.ingredients %}
+                      <li>{{ ingredient }}</li>
+                    {% endfor %}
+                  </ul>
                 {% endif %}
               </div>
               <p/>
               <h5>Directions</h5>
               <div class="r_directions">
                 {% if r.directions %}
-                  {% for direction in r.directions %}
-                    {{ direction }}
-                  {% endfor %}
+                  <ul>
+                    {% for direction in r.directions %}
+                      <li>{{ direction }}</li>
+                    {% endfor %}
+                  </ul>
                 {% endif %}
               </div>
               <p/>
               <h5>References</h5>
               <div class="r_references">
                 {% if r.references %}
-                  {% for reference in r.references %}
-                    <a href="{{ reference.url }}">{{ reference.name }}</a>
-                  {% endfor %}
+                  <ul>
+                    {% for reference in r.references %}
+                      <li><a href="{{ reference.url }}">{{ reference.name }}</a></li>
+                    {% endfor %}
+                  </ul>
                 {% endif %}
               </div>
             </li>
