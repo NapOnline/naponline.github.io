@@ -1,5 +1,5 @@
-- name: bacon mac and cheese
-  description: simple mac and cheese with bacon
+- name: cast iron bacon mac and cheese
+  description: mac and cheese with bacon using a cast iron skillet
   ingredients:
     - 1 lbs elbow noodles
   directions:
