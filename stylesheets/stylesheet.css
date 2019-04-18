@@ -175,6 +175,8 @@ div.r-references ul li:before {
 
 div.r-references ul li a {
   color: #b5e853;
+  text-shadow: none;
+  font-size: 13px;
 }
 
 blockquote {
