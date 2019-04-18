@@ -70,7 +70,7 @@
                 {% if r.directions %}
                   <ul>
                     {% for direction in r.directions %}
-                      <li>{{ direction }}</li>
+                      <li class="direction">{{ direction }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
@@ -81,7 +81,7 @@
                 {% if r.references %}
                   <ul>
                     {% for reference in r.references %}
-                      <li><a href="{{ reference.url }}">{{ reference.name }}</a></li>
+                      <li class="reference"><a href="{{ reference.url }}">{{ reference.name }}</a></li>
                     {% endfor %}
                   </ul>
                 {% endif %}
