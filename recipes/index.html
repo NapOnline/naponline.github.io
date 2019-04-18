@@ -46,42 +46,42 @@
               <div class="note">
                 {{ r.description }}
               </div>
-              <div class="r_pictures">
+              <div class="r-pictures">
                 {% if r.pictures %}
                   {% for picture in r.pictures %}
-                  <img class="r_picture" alt="{{ picture.alt }}" src="{{ picture.url }}" width="{{ picture.size.width }}" height="{{ picture.size.height }}" />
+                  <img class="r-picture" alt="{{ picture.alt }}" src="{{ picture.url }}" width="{{ picture.size.width }}" height="{{ picture.size.height }}" />
                   {% endfor %}
                 {% endif %}
               <div>
               <p/>
               <h5>Ingredients</h5>
-              <div class="r_ingredients">
+              <div class="r-ingredients">
                 {% if r.ingredients %}
                   <ul>
                     {% for ingredient in r.ingredients %}
-                      <li class="r_ingredient">{{ ingredient }}</li>
+                      <li class="r-ingredient">{{ ingredient }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
               </div>
               <p/>
               <h5>Directions</h5>
-              <div class="r_directions">
+              <div class="r-directions">
                 {% if r.directions %}
                   <ul>
                     {% for direction in r.directions %}
-                      <li class="r_direction">{{ direction }}</li>
+                      <li class="r-direction">{{ direction }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
               </div>
               <p/>
               <h5>References</h5>
-              <div class="r_references">
+              <div class="r-references">
                 {% if r.references %}
                   <ul>
                     {% for reference in r.references %}
-                      <li class="r_reference"><a href="{{ reference.url }}">{{ reference.name }}</a></li>
+                      <li class="r-reference"><a href="{{ reference.url }}">{{ reference.name }}</a></li>
                     {% endfor %}
                   </ul>
                 {% endif %}
