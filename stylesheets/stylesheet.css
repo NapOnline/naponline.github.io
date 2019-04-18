@@ -143,7 +143,7 @@ ul li:before {
   line-height: 16px;
 }
 
-ul li:before .ingredient {
+ul li.ingredient:before {
   content: "*";
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
   font-size: 13px;
