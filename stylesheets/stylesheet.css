@@ -124,7 +124,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 0 5px 0;
 }
 
-#main_content ul li span.r-name {
+#main_content ul li .r-name {
   text-shadow: none;
   color: #b5e853;
 }
