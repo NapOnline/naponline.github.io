@@ -43,13 +43,13 @@
         <div class="toc">
           <ul>
             {% for r in site.data.recipes %}
-            <li><a href="#{{ r.name }}">{{ r.name }}</a></li>
+            <li><a href="#{{ r.name | slugify }}">{{ r.name }}</a></li>
             {% endfor %}
           </ul>
         </div>
         <ul>
           {% for r in site.data.recipes %}
-            <li id="{{ r.name }}"><span class="r-name">{{ r.name }}</span>
+            <li id="{{ r.name | slugify }}"><span class="r-name">{{ r.name }}</span>
               <div class="note">
                 {{ r.description }}
               </div>
