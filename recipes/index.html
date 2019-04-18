@@ -40,9 +40,16 @@
             <span class="octicon octicon-link"></span>
           </a>
           Recipes</h3>
+        <div class="toc">
+          <ul>
+            {% for r in site.data.recipes %}
+            <li><a href="#{{ r.name }}">{{ r.name }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
         <ul>
           {% for r in site.data.recipes %}
-            <li><span class="r-name">{{ r.name }}</span>
+            <li id="{{ r.name }}"><span class="r-name">{{ r.name }}</span>
               <div class="note">
                 {{ r.description }}
               </div>
