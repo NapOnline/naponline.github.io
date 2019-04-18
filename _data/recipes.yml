@@ -1,14 +1,25 @@
 - name: cast iron bacon mac and cheese
   description: mac and cheese with bacon using a cast iron skillet
   ingredients:
-    - 1 lbs elbow noodles
+    - 1 pound elbow macaroni
+    - 8 ounces bacon
+    - 1/2 medium onion, diced
+    - 2 teaspoons red pepper flakes
+    - 4 tablespoons unsalted butter
+    - 4 tablespoons all-purpose flour
+    - 3 cups whole milk
+    - 16 ounces cheese (8 ounce sharp chedder, 8 ounce vermont sharp chedder)
+    - 1/4 cup parmesan cheese, grated
+    - 1/4 cup bread crumbs
+    - Salt
+    - Pepper
   directions:
     - Boil noodles
   pictures:
     - url: pictures/cast_iron_bacon_mac_and_cheese.jpg
       size:
-        width: 25%
-        height: 25%
+        width: 35%
+        height: 35%
       alt: cast iron bacon mac and cheese
   references:
     - name: Cast Iron Mac and Cheese
