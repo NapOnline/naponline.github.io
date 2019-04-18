@@ -5,4 +5,7 @@
   directions:
     - Boil noodles
   pictures:
-    - images/bacon_mac_and_cheese.png
+    - url: images/bacon_mac_and_cheese.png
+  references:
+    - name: Cast Iron Mac and Cheese
+      url: https://www.macheesmo.com/cast-iron-mac-and-cheese/

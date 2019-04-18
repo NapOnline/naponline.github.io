@@ -44,15 +44,36 @@
           {% for r in site.data.recipes %}
             <li><a href="#">{{ r.name }}</a>
               <div class="note">
-              {{ r.description }}
+                {{ r.description }}
               </div>
+              <div class="r_pictures">
+                {% if r.pictures %}
+                  {% for picture in r.pictures %}
+                  <img src="{{ picture.url }}"/>
+                  {% endfor %}
+                {% endif %}
               <div>
-              {% if r.pictures %}
-                {% for image in r.pictures %}
-                <img src="{{ image }}"/>
-                {% endfor %}
-              {% endif %}
-              <div>
+              <div class="r_ingredients">
+                {% if r.ingredients %}
+                  {% for ingredient in r.ingredients %}
+                    {{ ingredient }}
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <div class="r_directions">
+                {% if r.directions %}
+                  {% for direction in r.directions %}
+                    {{ direction }}
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <div class="r_references">
+                {% if r.references %}
+                  {% for reference in r.referencess %}
+                    <a href="{{ reference.url }}">{{ reference.name }}</a>
+                  {% endfor %}
+                {% endif %}
+              </div>
             </li>
           {% endfor %}
         </ul>
