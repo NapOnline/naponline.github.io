@@ -43,7 +43,6 @@
         <ul>
           {% for r in site.data.recipes %}
             <li><a href="#">{{ r.name }}</a>
-              <h5>Description</h5>
               <div class="note">
                 {{ r.description }}
               </div>
@@ -54,7 +53,8 @@
                   {% endfor %}
                 {% endif %}
               <div>
-              <h5>Ingredients</h5>
+              <p/>
+              <h4>Ingredients</h4>
               <div class="r_ingredients">
                 {% if r.ingredients %}
                   {% for ingredient in r.ingredients %}
@@ -62,6 +62,7 @@
                   {% endfor %}
                 {% endif %}
               </div>
+              <p/>
               <h5>Directions</h5>
               <div class="r_directions">
                 {% if r.directions %}
@@ -70,10 +71,11 @@
                   {% endfor %}
                 {% endif %}
               </div>
+              <p/>
               <h5>References</h5>
               <div class="r_references">
                 {% if r.references %}
-                  {% for reference in r.referencess %}
+                  {% for reference in r.references %}
                     <a href="{{ reference.url }}">{{ reference.name }}</a>
                   {% endfor %}
                 {% endif %}
