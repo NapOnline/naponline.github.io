@@ -41,6 +41,20 @@
           </a>
           Recipes</h3>
         <ul>
+          {% for r in site.data.recipes %}
+            <li><a href="#">{{ r.name }}</a>
+              <div class="note">
+              {{ r.description }}
+              </div>
+              <div>
+              {% if r.pictures %}
+                {% for image in r.pictures %}
+                <img src="{{ image }}"/>
+                {% endfor %}
+              {% endif %}
+              <div>
+            </li>
+          {% endfor %}
         </ul>
       </section>
     </div>
