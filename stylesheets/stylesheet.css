@@ -173,6 +173,10 @@ div.r-references ul li:before {
   line-height: 16px;
 }
 
+div.r-references ul li a {
+  color: #b5e853;
+}
+
 blockquote {
   color: #aaa;
   padding-left: 10px;
