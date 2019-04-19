@@ -63,17 +63,14 @@
           <ul>
             {% for r_hash in site.data.recipes %}
             {% assign r = r_hash[1] %}
-              <li>{{ r_hash }}</li>
-              <li>{{ r_hash[0] }}</li>
-              <li>{{ r_hash[1] }}</li>
-              <li>{{ r }}</li>
               <li onclick="toggle('{{ r.name | slugify }}')">{{ r.name }}</li>
             {% endfor %}
           </ul>
         </div>
         <div class="line"></div>
         <ul>
-          {% for r in site.data.recipes %}
+          {% for r_hash in site.data.recipes %}
+          {% assign r = r_hash[1] %}
             <li id="{{ r.name | slugify }}" style="display: none;"><span class="r-name">{{ r.name }}</span>
               <div class="note">
                 {{ r.description }}
