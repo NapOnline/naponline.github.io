@@ -21,6 +21,14 @@
             font-size: 0.875em;
             text-decoration: none;
         }
+        .line {
+            display: block;
+            height: 1px;
+            border: 0px;
+            border-top: 1px dashed #ccc;
+            margin: 1em 0;
+            padding: 0px;
+        }
     </style>
   </head>
 
@@ -49,6 +57,7 @@
             {% endfor %}
           </ul>
         </div>
+        <div class="line"></div>
         <ul>
           {% for r in site.data.recipes %}
             <li id="{{ r.name | slugify }}"><span class="r-name">{{ r.name }}</span>
