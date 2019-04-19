@@ -61,9 +61,8 @@
         <div class="toc">
           <h4>Table of Contents</h4>
           <ul>
-            {% for r_hash in site.data.recipes %}
-            {{ r_hash }}
-            {% assign r = r_hash[1] %}
+            {{ site.data.recipes }}
+            {% for r in site.data.recipes %}
               <li onclick="toggle('{{ r.name | slugify }}')">{{ r.name }}</li>
             {% endfor %}
           </ul>
