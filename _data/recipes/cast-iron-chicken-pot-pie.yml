@@ -1,0 +1,18 @@
+name: cast iron chicken pot pie
+description: chicken pot pie using a cast iron skillet
+ingredients:
+  - 1 1/2 pounds chicken tenders (about 10 tenders)
+directions:
+  - Special equipment: 10-inch cast-iron pan
+  - Preheat the oven to 400 degrees F
+pictures:
+  - url: pictures/cast-iron-chicken-pot-pie.jpg
+    size:
+      width: 35%
+      height: 35%
+    alt: cast iron chicken pot pie
+references:
+  - name: Easy Chicken Pot Pie
+    url: https://www.foodnetwork.com/recipes/sunny-anderson/easy-chicken-pot-pie-recipe-1923875
+  - name: Recipe of the Day: Sunny's Easy Chicken Pot Pie | Food Network
+    url: https://youtu.be/ABnlndol_fg
