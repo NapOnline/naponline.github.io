@@ -65,7 +65,7 @@
           <h4>Table of Contents</h4>
           <ul>
             {% for r in site.data.recipes %}
-            <li><a href="#{{ r.name | slugify }}" onclick="toggle({{ r.name | slugify }})">{{ r.name }}</a></li>
+              <li onclick="toggle({{ r.name | slugify }})">{{ r.name }}</li>
             {% endfor %}
           </ul>
         </div>
