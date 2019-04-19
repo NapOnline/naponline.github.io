@@ -30,8 +30,17 @@
             padding: 0px;
         }
     </style>
+    <script type="text/javascript">
+      function toggle(id) {
+        var x = document.getElementById(id);
+        if (x.style.display === "none") {
+          x.style.display = "block";
+        } else {
+          x.style.display = "none";
+        }
+      }
+    </script>
   </head>
-
   <body>
 
     <header>
@@ -53,7 +62,7 @@
           <h4>Table of Contents</h4>
           <ul>
             {% for r in site.data.recipes %}
-            <li><a href="#{{ r.name | slugify }}">{{ r.name }}</a></li>
+            <li><a href="#{{ r.name | slugify }}" onclick="toggle({{ r.name | slugify }})">{{ r.name }}</a></li>
             {% endfor %}
           </ul>
         </div>
