@@ -5,120 +5,52 @@
 <html>
   <head>
     <meta charset='UTF-8'>
-    <title>{{ site.title }}</title>
+    <title>{{ site.title }} / IP Subnet Calculator</title>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="author" content="{{ site.name }}">
     <meta name="description" content="{{ site.description }}">
-    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="../stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/github-dark.css" media="screen">
 
     <style>
         a {
             text-decoration: none;
+            color: #b5e853;
+        }
+        a:link {
+            text-decoration: none;
+            color: #b5e853;
+        }
+        a:visited {
+            text-decoration: none;
+            color: #b5e853;
         }
         .note {
             font-style: italic;
             font-size: 0.875em;
             text-decoration: none;
         }
-        .line {
-            display: block;
-            height: 1px;
-            border: 0px;
-            border-top: 1px dashed #ccc;
-            margin: 1em 0;
-            padding: 0px;
-        }
     </style>
 
-    <script type="text/javascript">
-      function toggle(id) {
-        var x = document.getElementById(id);
-        if (x.style.display === "none") {
-          x.style.display = "block";
-        } else {
-          x.style.display = "none";
-        }
-      }
-    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="recipes.js"></script>
+
   </head>
+
   <body>
 
     <header>
       <div class="container">
-        <h1>{{ site.title }}</h1>
+        <h1><a href="/">{{ site.title }}</a>&nbsp;/&nbsp;Recipes</h1>
         <h2></h2>
       </div>
     </header>
 
     <div class="container">
       <section id="main_content">
-        <h3>
-          <a id="welcome-to-naponline" class="anchor" href="#welcome-to-naponline" aria-hidden="true">
-            <span class="octicon octicon-link"></span>
-          </a>
-          Recipes
-        </h3>
-        <div class="toc">
-          <h4>Table of Contents</h4>
-          <ul>
-            {% for r_hash in site.data.recipes %}
-            {% assign r = r_hash[1] %}
-              <li onclick="toggle('{{ r.name | slugify }}')">{{ r.name }}</li>
-            {% endfor %}
-          </ul>
+        <div style="width:95%; margin:10px auto;">
+          <div id="ipcalc" style="font-size: 50px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)"></div>
         </div>
-        <div class="line"></div>
-        <ul>
-          {% for r_hash in site.data.recipes %}
-          {% assign r = r_hash[1] %}
-            <li id="{{ r.name | slugify }}" style="display: none;"><span class="r-name">{{ r.name }}</span>
-              <div class="note">
-                {{ r.description }}
-              </div>
-              <div class="r-pictures">
-                {% if r.pictures %}
-                  {% for picture in r.pictures %}
-                  <img class="r-picture" alt="{{ picture.alt }}" src="{{ picture.url }}" width="{{ picture.size.width }}" height="{{ picture.size.height }}" />
-                  {% endfor %}
-                {% endif %}
-              <div>
-              <p/>
-              <h5>Ingredients</h5>
-              <div class="r-ingredients">
-                {% if r.ingredients %}
-                  <ul>
-                    {% for ingredient in r.ingredients %}
-                      <li>{{ ingredient }}</li>
-                    {% endfor %}
-                  </ul>
-                {% endif %}
-              </div>
-              <p/>
-              <h5>Directions</h5>
-              <div class="r-directions">
-                {% if r.directions %}
-                  <ul>
-                    {% for direction in r.directions %}
-                      <li>{{ direction | newline_to_br }}</li>
-                    {% endfor %}
-                  </ul>
-                {% endif %}
-              </div>
-              <p/>
-              <h5>References</h5>
-              <div class="r-references">
-                {% if r.references %}
-                  <ul>
-                    {% for reference in r.references %}
-                      <li><a href="{{ reference.url }}" target="_blank">{{ reference.name }}</a></li>
-                    {% endfor %}
-                  </ul>
-                {% endif %}
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
       </section>
     </div>
 
