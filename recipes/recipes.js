@@ -9,6 +9,7 @@
     });
 })(jQuery);
 
+// Get recipe
 $(function() {
   var recipe = $.uriGet('r');
   var url = 'https://api.naponline.net/recipes/' + recipe;
@@ -23,4 +24,8 @@ $(function() {
   $.get(url, function(data) {
     $('#toc').html(data);
   }, "html");
+});
+
+$(function() {
+  $('#toc').html($.uriGet(''));
 });
