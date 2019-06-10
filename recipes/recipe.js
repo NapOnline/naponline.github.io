@@ -10,6 +10,6 @@ $(function() {
       $('#r_modified').html(data.recipe.modified);
     }, "html");
   } else {
-      $('#r_name').html('No recipe id provided.');
+    $('#r_name').html('No recipe id provided.');
   }
 });
