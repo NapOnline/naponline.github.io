@@ -1,14 +1,3 @@
-(function ($) {
-    $.extend({
-        uriGet: function () {
-          var url_string = location.href;
-          var url = new URL(url_string);
-          var val = url.searchParams.get(arguments[0]);
-          return val;
-        }
-    });
-})(jQuery);
-
 // Get recipe
 $(function() {
   var recipe = $.uriGet('r');
