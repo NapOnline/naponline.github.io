@@ -14,18 +14,7 @@ $(function() {
   var recipe = $.uriGet('r');
   var url = 'https://api.naponline.net/recipes/' + recipe;
   $.get(url, function(data) {
+    $('#recipe_header').html(data.name);
     $('#recipe').html(data);
   }, "html");
-});
-
-// Get table of contents
-$(function() {
-  var url = 'https://api.naponline.net/recipes'
-  $.get(url, function(data) {
-    $('#toc').html(data);
-  }, "html");
-});
-
-$(function() {
-  $('#toc').html($.uriGet(''));
 });
