@@ -1,7 +1,7 @@
 // Get table of contents
 $(function() {
-  var url = 'https://api.naponline.net/recipes';
+  var url = 'https://api.naponline.net/recipes/';
   $.getJSON(url, function(data) {
-    $('#toc').html(data.index.recipes);
+    $('#i_toc').html(data.index.recipes);
   }, "html");
 });
