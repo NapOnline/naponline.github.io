@@ -31,3 +31,8 @@
   link: /ddns
   description: AWS API Gateway + Lambda + Route 53
   github: https://github.com/napalm255/dynamic-dns
+
+- name: secret santa
+  link: /secretsanta
+  description: Simple secret santa pairing generator
+  github: https://github.com/napalm255/secretsanta
