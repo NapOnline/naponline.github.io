@@ -67,12 +67,23 @@
               </div>
               <div id="collapse-{{ forloop.index }}" class="collapse" aria-labelledby="heading-{{ forloop.index }}" data-parent="#accordionRecipes">
                 <div class="card-body bg-secondary text-white">
-                  {{ recipe.description }}
-                  <li>
-                    {% for ingredient in recipe.ingredients %}
-                      <ul>{{ ingredient }}</ul>
-                    {% endfor %}
-                  </li>
+                  <div>
+                    {{ recipe.description }}
+                  </div>
+                  <div id="ingredients-{{ forloop.index }}">
+                    <li id="ingredientsList-{{ forloop.index }}">
+                      {% for ingredient in recipe.ingredients %}
+                        <ul>{{ ingredient }}</ul>
+                      {% endfor %}
+                    </li>
+                  </div>
+                  <div id="directions-{{ forloop.index }}">
+                    <li id="directionsList-{{ forloop.index }}">
+                      {% for direction in recipe.directions %}
+                        <ul>{{ direction }}</ul>
+                      {% endfor %}
+                    </li>
+                  </div>
                 </div>
               </div>
             </div>
