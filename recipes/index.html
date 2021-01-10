@@ -56,11 +56,11 @@
         </div>
         <div class="accordion" id="accordionRecipes">
           {% for recipe_hash in site.data.recipes %}
-          {% assign recipe = recipe_hash[1] %}
-          {% assign equipmentId = "equipment" + forloop.index %}
-          {% assign ingredientsId = "ingredients" + forloop.index %}
-          {% assign directionsId = "directions" + forloop.index %}
-          {% assign referencesId = "references" + forloop.index %}
+            {% assign recipe = recipe_hash[1] %}
+            {% capture equipmentId %}equipment{{ forloop.index }}{% endcapture %}
+            {% capture ingredientsId %}ingredients{{ forloop.index }}{% endcapture %}
+            {% capture directionsId %}directions{{ forloop.index }}{% endcapture %}
+            {% capture referencesId %}references{{ forloop.index }}{% endcapture %}
             <div class="card bg-dark">
               <div class="card-header bg-dark text-white" id="heading-{{ forloop.index }}">
                 <h2 class="mb-0">
