@@ -17,12 +17,12 @@ directions:
   - Melt butter in an 11- or 12-inch cast iron skillet over medium heat. Cook, swirling pan to lightly to coat the sides and bottom, until the foam subsides and the butter turns a deep nut brown, taking extreme care not to burn the butter.
   - Pour the brown butter into a large bowl. (Do not wipe out skillet.) Whisk the maple, honey, or agave syrup into the butter, then whisk in buttermilk. The mixture should be cool to the touch; if not, let cool before whisking in eggs and scallions (if using). Then, with a wooden spoon, mix in the reserved dry ingredients.
   - Scrape batter into skillet. Bake until the top is golden brown and an inserted toothpick emerges clean, 30 to 40 minutes. Cool in the skillet for 10 minutes before slicing.
-pictures:
-  - url: pictures/cast-iron-corn-bread.jpg
-    size:
-      width: 35%
-      height: 35%
-    alt: cast iron corn bread
+# pictures:
+#   - url: pictures/cast-iron-corn-bread.jpg
+#     size:
+#       width: 35%
+#       height: 35%
+#     alt: cast iron corn bread
 references:
   - name: Buttermilk Cornbread in Cast Iron Skillet
     url: https://www.camelliabrand.com/recipes/buttermilk-cornbread-in-cast-iron-skillet/
