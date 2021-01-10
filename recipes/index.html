@@ -74,12 +74,12 @@
                   <div id="carousel{{ forloop.index }}Indicators" class="carousel slide" data-ride="carousel">
                     <ol class="carousel-indicators">
                       {% for picture in recipe.pictures %}
-                        <li data-target="#carousel{{ forloop.index }}Indicators" data-slide-to="{{ forloop.index }}" {% if forloop.index == 0 %} class="active" {% endif %}></li>
+                        <li data-target="#carousel{{ forloop.index }}Indicators" data-slide-to="{{ forloop.index }}" class="active"></li>
                       {% endfor %}
                     </ol>
                     <div class="carousel-inner">
                       {% for picture in recipe.pictures %}
-                        <div class="carousel-item {% if forloop.index == 0 %} active {% endif %}">
+                        <div class="carousel-item active">
                           <img src="{{ picture.url }}" class="d-block w-100" alt="{{ picture.alt }}">
                         </div>
                       {% endfor %}
