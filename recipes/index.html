@@ -62,9 +62,14 @@
             <div class="card">
               <div class="card-header" id="heading-{{ forloop.index }}">
                 <h2 class="mb-0">
+                  <a class="btn btn-primary" data-toggle="collapse" href="#collapse-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapse-{{ forloop.index }}">
+                      {{ recipe.name }}
+                    </a>
+<!--
                   <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-{{ forloop.index }}" aria-expanded="true" aria-controls="collapse-{{ forloop.index }}">
                     {{ recipe.name }}
                   </button>
+-->
                 </h2>
               </div>
               <div id="collapse-{{ forloop.index }}" class="collapse" aria-labelledby="heading-{{ forloop.index }}" data-parent="#accordionRecipes">
