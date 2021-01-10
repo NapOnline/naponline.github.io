@@ -52,6 +52,11 @@
           <div id="toc_header" style="font-size: 20px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">Table of Contents</div>
           <div id="i_toc"></div>
         </div>
+        <div>
+          {% for r in site.data.recipes %}
+            {{ r.name }}
+          {% endfor %}
+        </div>
       </section>
     </div>
 
