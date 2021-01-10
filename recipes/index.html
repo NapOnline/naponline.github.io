@@ -53,8 +53,9 @@
           <div id="i_toc"></div>
         </div>
         <div>
-          {% for r in site.data.recipes %}
-            {{ r.name }}
+          {% for recipe_hash in site.data.recipes %}
+          {% assign recipe = recipe_hash[1] %}
+            {{ recipe.name }}
           {% endfor %}
         </div>
       </section>
