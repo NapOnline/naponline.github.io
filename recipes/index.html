@@ -108,14 +108,16 @@
                     </div>
                   </div>
                   {% endif %}
-                  <div id="{{ equipmentId }}">
-                    <h4>Equipment</h4>
-                    <ul id="{{ equipmentId }}-List">
-                      {% for ingredient in recipe.ingredients %}
-                        <li>{{ ingredient }}</li>
-                      {% endfor %}
-                    </ul>
-                  </div>
+                  {% if recipe.equipment %}
+                    <div id="{{ equipmentId }}">
+                      <h4>Equipment</h4>
+                      <ul id="{{ equipmentId }}-List">
+                        {% for item in recipe.equipment %}
+                          <li>{{ item }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  {% endif %}
                   <div id="ingredients-{{ forloop.index }}">
                     <h4>Ingredients</h4>
                     <ul id="ingredientsList-{{ forloop.index }}">
