@@ -23,6 +23,11 @@ pictures:
       width: 35%
       height: 35%
     alt: cast iron bacon mac and cheese
+  - url: pictures/cast-iron-chicken-pot-pie.jpg
+    size:
+      width: 35%
+      height: 35%
+    alt: cast iron chicken pot pie
 references:
   - name: Cast Iron Mac and Cheese
     url: https://www.macheesmo.com/cast-iron-mac-and-cheese/
