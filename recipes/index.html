@@ -57,26 +57,33 @@
         <div class="accordion" id="accordionRecipes">
           {% for recipe_hash in site.data.recipes %}
             {% assign recipe = recipe_hash[1] %}
+            {% capture nameId %}name{{ forloop.index }}{% endcapture %}
+            {% capture descriptionId %}description{{ forloop.index }}{% endcapture %}
+            {% capture picturesId %}pictures{{ forloop.index }}{% endcapture %}
             {% capture equipmentId %}equipment{{ forloop.index }}{% endcapture %}
             {% capture ingredientsId %}ingredients{{ forloop.index }}{% endcapture %}
             {% capture directionsId %}directions{{ forloop.index }}{% endcapture %}
             {% capture referencesId %}references{{ forloop.index }}{% endcapture %}
             <div class="card bg-dark">
-              <div class="card-header bg-dark text-white" id="heading-{{ forloop.index }}">
+              <div class="card-header bg-dark text-white" id="{{ nameId }}-Heading">
                 <h2 class="mb-0">
-                  <a class="btn btn-outline-primary btn-block" data-toggle="collapse" href="#collapse-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapse-{{ forloop.index }}">
+                  <a class="btn btn-outline-primary btn-block" data-toggle="collapse" href="#{{ nameId }}" role="button" aria-expanded="false" aria-controls="{{ nameId }}">
                     {{ recipe.name }}
                   </a>
                 </h2>
               </div>
-              <div id="collapse-{{ forloop.index }}" class="collapse bg-dark" aria-labelledby="heading-{{ forloop.index }}" data-parent="#accordionRecipes">
+              <div id="{{ nameId }}" class="collapse bg-dark" aria-labelledby="{{ nameId }}-Heading" data-parent="#accordionRecipes">
                 <div class="card-body bg-secondary text-white">
-                  <div>
+
+                  {% if recipe.description %}
+                  <div id="{{ descriptionId }}">
                     <h4>Description</h4>
                     <p>{{ recipe.description }}</p>
                   </div>
+                  {% endif %}
+
                   {% if recipe.pictures.size > 0 %}
-                  <div id="pictures-{{ forloop.index }}">
+                  <div id="{{ picturesId }}">
                     <h4>Pictures</h4>
                     <p>
                       <a class="btn btn-outline-secondary btn-sm" data-toggle="collapse" href="#collapsePictures-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapsePictures-{{ forloop.index }}">
