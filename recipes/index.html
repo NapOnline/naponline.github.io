@@ -79,7 +79,7 @@
                     </ol>
                     <div class="carousel-inner">
                       {% for picture in recipe.pictures %}
-                        <div class="carousel-item">
+                        <div class="carousel-item {% if forloop.index == 0 %} active {% endif %}">
                           <img src="{{ picture.url }}" class="d-block w-100" alt="{{ picture.alt }}">
                         </div>
                       {% endfor %}
