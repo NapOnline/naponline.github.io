@@ -71,51 +71,59 @@
                     <h4>Description</h4>
                     {{ recipe.description }}
                   </div>
-                  <div id="carousel{{ forloop.index }}Indicators" class="carousel slide" data-ride="carousel">
-                    <ol class="carousel-indicators">
-                      {% for picture in recipe.pictures %}
-                        <li data-target="#carousel{{ forloop.index }}Indicators" data-slide-to="{{ forloop.index }}" class="active"></li>
-                      {% endfor %}
-                    </ol>
-                    <div class="carousel-inner">
-                      {% for picture in recipe.pictures %}
-                        <div class="carousel-item active">
-                          <img src="{{ picture.url }}" class="d-block w-100" alt="{{ picture.alt }}">
+                  <div>
+                    <h4>Pictures</h4>
+                    <a class="btn btn-outline-secondary btn-block" data-toggle="collapse" href="#collapsePictures-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapsePictures-{{ forloop.index }}">
+                      Show
+                    </a>
+                    <div id="collapsePictures-{{ forloop.index }}">
+                      <div id="carousel{{ forloop.index }}Indicators" class="carousel slide" data-ride="carousel">
+                        <ol class="carousel-indicators">
+                          {% for picture in recipe.pictures %}
+                            <li data-target="#carousel{{ forloop.index }}Indicators" data-slide-to="{{ forloop.index }}" class="active"></li>
+                          {% endfor %}
+                        </ol>
+                        <div class="carousel-inner">
+                          {% for picture in recipe.pictures %}
+                            <div class="carousel-item active">
+                              <img src="{{ picture.url }}" class="d-block w-100" alt="{{ picture.alt }}">
+                            </div>
+                          {% endfor %}
                         </div>
-                      {% endfor %}
+                        <a class="carousel-control-prev" href="#carousel{{ forloop.index }}Indicators" role="button" data-slide="prev">
+                          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                          <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#carousel{{ forloop.index }}Indicators" role="button" data-slide="next">
+                          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                          <span class="sr-only">Next</span>
+                        </a>
+                      </div>
+                      <div id="ingredients-{{ forloop.index }}">
+                        <h4>Ingredients</h4>
+                        <ul id="ingredientsList-{{ forloop.index }}">
+                          {% for ingredient in recipe.ingredients %}
+                            <li>{{ ingredient }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      <div id="directions-{{ forloop.index }}">
+                        <h4>Directions</h4>
+                        <ul id="directionsList-{{ forloop.index }}">
+                          {% for direction in recipe.directions %}
+                            <li>{{ direction }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      <div id="references-{{ forloop.index }}">
+                        <h4>References</h4>
+                        <ul id="referencesList-{{ forloop.index }}">
+                          {% for reference in recipe.references %}
+                            <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
+                          {% endfor %}
+                        </ul>
+                      </div>
                     </div>
-                    <a class="carousel-control-prev" href="#carousel{{ forloop.index }}Indicators" role="button" data-slide="prev">
-                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                      <span class="sr-only">Previous</span>
-                    </a>
-                    <a class="carousel-control-next" href="#carousel{{ forloop.index }}Indicators" role="button" data-slide="next">
-                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                      <span class="sr-only">Next</span>
-                    </a>
-                  </div>
-                  <div id="ingredients-{{ forloop.index }}">
-                    <h4>Ingredients</h4>
-                    <ul id="ingredientsList-{{ forloop.index }}">
-                      {% for ingredient in recipe.ingredients %}
-                        <li>{{ ingredient }}</li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-                  <div id="directions-{{ forloop.index }}">
-                    <h4>Directions</h4>
-                    <ul id="directionsList-{{ forloop.index }}">
-                      {% for direction in recipe.directions %}
-                        <li>{{ direction }}</li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-                  <div id="references-{{ forloop.index }}">
-                    <h4>References</h4>
-                    <ul id="referencesList-{{ forloop.index }}">
-                      {% for reference in recipe.references %}
-                        <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
-                      {% endfor %}
-                    </ul>
                   </div>
                 </div>
               </div>
