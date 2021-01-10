@@ -71,6 +71,7 @@
                     {{ recipe.description }}
                   </div>
                   <div id="ingredients-{{ forloop.index }}">
+                    <h4>Ingredients</h4>
                     <ul id="ingredientsList-{{ forloop.index }}">
                       {% for ingredient in recipe.ingredients %}
                         <li>{{ ingredient }}</li>
@@ -78,6 +79,7 @@
                     </ul>
                   </div>
                   <div id="directions-{{ forloop.index }}">
+                    <h4>Directions</h4>
                     <ul id="directionsList-{{ forloop.index }}">
                       {% for direction in recipe.directions %}
                         <li>{{ direction }}</li>
