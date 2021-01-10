@@ -135,9 +135,9 @@
                   {% endif %}
 
                   {% if recipe.directions.size > 0 %}
-                  <div id="directions-{{ forloop.index }}">
+                  <div id="{{ directionsId }}">
                     <h4>Directions</h4>
-                    <ul id="directionsList-{{ forloop.index }}">
+                    <ul id="{{ directionsId }}-List">
                       {% for direction in recipe.directions %}
                         <li>{{ direction }}</li>
                       {% endfor %}
@@ -146,9 +146,9 @@
                   {% endif %}
 
                   {% if recipe.references.size > 0 %}
-                  <div id="references-{{ forloop.index }}">
+                  <div id="{{ referencesId }}">
                     <h4>References</h4>
-                    <ul id="referencesList-{{ forloop.index }}">
+                    <ul id="{{ referencesId }}-List">
                       {% for reference in recipe.references %}
                         <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
                       {% endfor %}
