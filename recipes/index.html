@@ -71,18 +71,18 @@
                     {{ recipe.description }}
                   </div>
                   <div id="ingredients-{{ forloop.index }}">
-                    <li id="ingredientsList-{{ forloop.index }}">
+                    <ul id="ingredientsList-{{ forloop.index }}">
                       {% for ingredient in recipe.ingredients %}
-                        <ul>{{ ingredient }}</ul>
+                        <li>{{ ingredient }}</li>
                       {% endfor %}
-                    </li>
+                    </ul>
                   </div>
                   <div id="directions-{{ forloop.index }}">
-                    <li id="directionsList-{{ forloop.index }}">
+                    <ul id="directionsList-{{ forloop.index }}">
                       {% for direction in recipe.directions %}
-                        <ul>{{ direction }}</ul>
+                        <li>{{ direction }}</li>
                       {% endfor %}
-                    </li>
+                    </ul>
                   </div>
                 </div>
               </div>
