@@ -60,7 +60,7 @@
           {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
             <div class="card">
-              <div class="card-header" id="heading-{{ forloop.index }}">
+              <div class="card-header bg-dark text-white" id="heading-{{ forloop.index }}">
                 <h2 class="mb-0">
                   <a class="btn btn-primary" data-toggle="collapse" href="#collapse-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapse-{{ forloop.index }}">
                       {{ recipe.name }}
