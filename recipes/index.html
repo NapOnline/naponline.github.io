@@ -60,14 +60,14 @@
           {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
             <div class="card">
-              <div class="card-header" id="heading-{{ recipe.name }}">
+              <div class="card-header" id="heading-{{ forloop.index }}">
                 <h2 class="mb-0">
-                  <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-{{ recipe.name }}" aria-expanded="true" aria-controls="collapse-{{ recipe.name }}">
+                  <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-{{ forloop.index }}" aria-expanded="true" aria-controls="collapse-{{ forloop.index }}">
                     {{ recipe.name }}
                   </button>
                 </h2>
               </div>
-              <div id="collapse-{{ recipe.name }}" class="collapse show" aria-labelledby="heading-{{ recipe.name }}" data-parent="#accordionRecipes">
+              <div id="collapse-{{ forloop.index }}" class="collapse show" aria-labelledby="heading-{{ forloop.index }}" data-parent="#accordionRecipes">
                 <div class="card-body">
                   {{ recipe.description }}
                 </div>
