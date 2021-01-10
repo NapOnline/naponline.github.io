@@ -72,7 +72,7 @@
                     <p>{{ recipe.description }}</p>
                   </div>
                   {% if recipe.pictures.size > 0 %}
-                  <div>
+                  <div id="pictures-{{ forloop.index }}">
                     <h4>Pictures</h4>
                     <p>
                       <a class="btn btn-outline-secondary btn-sm" data-toggle="collapse" href="#collapsePictures-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapsePictures-{{ forloop.index }}">
@@ -105,32 +105,32 @@
                         </div>
                       </div>
                     </div>
-                    <div id="ingredients-{{ forloop.index }}">
-                      <h4>Ingredients</h4>
-                      <ul id="ingredientsList-{{ forloop.index }}">
-                        {% for ingredient in recipe.ingredients %}
-                          <li>{{ ingredient }}</li>
-                        {% endfor %}
-                      </ul>
-                    </div>
-                    <div id="directions-{{ forloop.index }}">
-                      <h4>Directions</h4>
-                      <ul id="directionsList-{{ forloop.index }}">
-                        {% for direction in recipe.directions %}
-                          <li>{{ direction }}</li>
-                        {% endfor %}
-                      </ul>
-                    </div>
-                    <div id="references-{{ forloop.index }}">
-                      <h4>References</h4>
-                      <ul id="referencesList-{{ forloop.index }}">
-                        {% for reference in recipe.references %}
-                          <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
-                        {% endfor %}
-                      </ul>
-                    </div>
                   </div>
                   {% endif %}
+                  <div id="ingredients-{{ forloop.index }}">
+                    <h4>Ingredients</h4>
+                    <ul id="ingredientsList-{{ forloop.index }}">
+                      {% for ingredient in recipe.ingredients %}
+                        <li>{{ ingredient }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  <div id="directions-{{ forloop.index }}">
+                    <h4>Directions</h4>
+                    <ul id="directionsList-{{ forloop.index }}">
+                      {% for direction in recipe.directions %}
+                        <li>{{ direction }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  <div id="references-{{ forloop.index }}">
+                    <h4>References</h4>
+                    <ul id="referencesList-{{ forloop.index }}">
+                      {% for reference in recipe.references %}
+                        <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
