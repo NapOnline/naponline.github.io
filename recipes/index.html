@@ -86,16 +86,16 @@
                   <div id="{{ picturesId }}">
                     <h4>Pictures</h4>
                     <p>
-                      <a class="btn btn-outline-secondary btn-sm" data-toggle="collapse" href="#collapsePictures-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapsePictures-{{ forloop.index }}">
+                      <a class="btn btn-outline-secondary btn-sm" data-toggle="collapse" href="#{{ picturesId }}-Collapse" role="button" aria-expanded="false" aria-controls="{{ picturesId }}-Collapse">
                         Show
                       </a>
                     </p>
-                    <div class="collapse" id="collapsePictures-{{ forloop.index }}">
+                    <div class="collapse" id="{{ picturesId }}-Collapse">
                       <div class="card card-body">
-                        <div id="carousel{{ forloop.index }}Indicators" class="carousel slide" data-ride="carousel">
+                        <div id="{{ picturesId }}-CarouselIndicators" class="carousel slide" data-ride="carousel">
                           <ol class="carousel-indicators">
                             {% for picture in recipe.pictures %}
-                              <li data-target="#carousel{{ forloop.index }}Indicators" data-slide-to="{{ forloop.index }}" class="active"></li>
+                            <li data-target="#{{ picturesId}}-CarouselIndicators" data-slide-to="{{ forloop.index }}" class="active"></li>
                             {% endfor %}
                           </ol>
                           <div class="carousel-inner">
@@ -105,11 +105,11 @@
                               </div>
                             {% endfor %}
                           </div>
-                          <a class="carousel-control-prev" href="#carousel{{ forloop.index }}Indicators" role="button" data-slide="prev">
+                          <a class="carousel-control-prev" href="#{{ picturesId }}-CarouselIndicators" role="button" data-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                             <span class="sr-only">Previous</span>
                           </a>
-                          <a class="carousel-control-next" href="#carousel{{ forloop.index }}Indicators" role="button" data-slide="next">
+                          <a class="carousel-control-next" href="#{{ picturesId }}-CarouselIndicators" role="button" data-slide="next">
                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
                             <span class="sr-only">Next</span>
                           </a>
