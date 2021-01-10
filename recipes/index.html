@@ -57,7 +57,7 @@
         <div class="accordion" id="accordionRecipes">
           {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
-            <div class="card bg-dark">
+            <div class="card bg-light">
               <div class="card-header bg-dark text-white" id="heading-{{ forloop.index }}">
                 <h2 class="mb-0">
                   <a class="btn btn-outline-primary btn-block" data-toggle="collapse" href="#collapse-{{ forloop.index }}" role="button" aria-expanded="false" aria-controls="collapse-{{ forloop.index }}">
