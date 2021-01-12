@@ -45,8 +45,10 @@
           {% for p in sorted_projects %}
             <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">
-              {% if not p.active %}
-              <img src="https://img.shields.io/badge/github-%F0%9F%98%AD-lightgrey.svg?style=flat-square">
+              {% if p.active %}
+              <img src="https://img.shields.io/badge/active-%E2%9C%94-green.svg?style=flat">
+              {% else %}
+              <img src="https://img.shields.io/badge/active-%E2%9D%8C-red.svg?style=flat">
               {% endif %}
               {% if p.github %}
               <a href="{{ p.github }}" title="Find on GitHub"><img src="https://img.shields.io/badge/github-project-lightgrey.svg?style=flat-square"></a>
