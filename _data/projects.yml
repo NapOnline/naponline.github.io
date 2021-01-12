@@ -1,41 +1,58 @@
 ---
 - name: recipes
   link: /recipes
-  description: simple recipes for geeks
+  description: Favorite recipes.
   active: "true"
 
 - name: powerbash
   link: https://powerbash.org/
-  description: a fast, purley bash powerline-style bash prompt
+  description: A fast, purley bash powerline-style bash prompt.
   github: https://github.com/napalm255/powerbash
   active: "true"
 
 - name: powertmux
   link: https://powertmux.org/
-  description: a customized and themed tmux configuration
+  description: A customized and themed tmux configuration.
   github: https://github.com/napalm255/powertmux
   active: "true"
 
 - name: ip address
   link: /ip
-  description: AWS API Gateway
+  description: Simple IP address lookup. Output in either text or json.
   active: "true"
+  tags:
+    - label: AWS
+      message: API Gateway
 
 - name: ip subnet calculator
   link: /ipcalc
-  description: AWS API Gateway + Lambda
+  description: Simple IP address subnet calculator.
   github: https://github.com/napalm255/ip-subnet-calculator
   active: "false"
+  tags:
+    - label: AWS
+      message: API Gateway
+    - label: AWS
+      message: Lambda
 
 - name: commute tracker
   link: /commute
-  description: AWS API Gateway + Lambda + SNS + Aurora
+  description: Track daily and historical commute times to and from home and work.
   github: https://github.com/napalm255/commute-data
   active: "false"
+  tags:
+    - label: AWS
+      message: API Gateway
+    - label: AWS
+      message: Lambda
+    - label: AWS
+      message: SNS
+    - label: AWS
+      message: Aurora
 
 - name: dynamic dns
   link: /ddns
-  description: AWS API Gateway + Lambda + Route 53
+  description: Dynamic DNS solution
   github: https://github.com/napalm255/dynamic-dns
   active: "false"
   tags:
