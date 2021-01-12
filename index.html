@@ -41,10 +41,11 @@
           </a>
           {{ site.subtitle }}</h3>
         <ul>
-          {% assign sorted_projects = site.data.projects | sort: 'active', 'name' %}
+          {% assign sorted_projects = site.data.projects | sort: 'active' %}
           {% for p in sorted_projects %}
             <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">
+              <p>{{ p.description }}</p>
               {% if p.active %}
               <img src="https://img.shields.io/badge/active-%E2%9C%94-green.svg?style=flat">
               {% else %}
@@ -53,7 +54,6 @@
               {% if p.github %}
               <a href="{{ p.github }}" title="Find on GitHub"><img src="https://img.shields.io/badge/github-project-lightgrey.svg?style=flat-square"></a>
               {% endif %}
-              {{ p.description }}
               </div>
             </li>
           {% endfor %}
