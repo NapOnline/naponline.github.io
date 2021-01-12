@@ -46,7 +46,7 @@
             <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">
               <p>{{ p.description }}</p>
-              {% if p.active %}
+              {% if p.active == "true" %}
               <img src="https://img.shields.io/badge/active-%E2%9C%94-green.svg?style=flat">
               {% else %}
               <img src="https://img.shields.io/badge/active-%E2%9D%8C-red.svg?style=flat">
