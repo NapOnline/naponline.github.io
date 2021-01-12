@@ -2,40 +2,45 @@
 - name: recipes
   link: /recipes
   description: simple recipes for geeks
+  active: true
 
 - name: powerbash
   link: https://powerbash.org/
   description: a fast, purley bash powerline-style bash prompt
   github: https://github.com/napalm255/powerbash
+  active: true
 
 - name: powertmux
   link: https://powertmux.org/
   description: a customized and themed tmux configuration
   github: https://github.com/napalm255/powertmux
+  active: true
 
 - name: ip address
   link: /ip
   description: AWS API Gateway
+  active: true
 
 - name: ip subnet calculator
   link: /ipcalc
   description: AWS API Gateway + Lambda
   github: https://github.com/napalm255/ip-subnet-calculator
-  defunct: true
+  active: false
 
 - name: commute tracker
   link: /commute
   description: AWS API Gateway + Lambda + SNS + Aurora
   github: https://github.com/napalm255/commute-data
-  defunct: true
+  active: false
 
 - name: dynamic dns
   link: /ddns
   description: AWS API Gateway + Lambda + Route 53
   github: https://github.com/napalm255/dynamic-dns
-  defunct: true
+  active: false
 
 - name: secret santa
   link: /secretsanta
   description: Simple secret santa pairing generator
   github: https://github.com/napalm255/secretsanta
+  active: true

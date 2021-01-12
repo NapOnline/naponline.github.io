@@ -41,11 +41,11 @@
           </a>
           {{ site.subtitle }}</h3>
         <ul>
-          {% assign sorted_projects = site.data.projects | sort: 'name' %}
+          {% assign sorted_projects = site.data.projects | sort: 'active', 'name' %}
           {% for p in sorted_projects %}
             <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">
-              {% if p.defunct %}
+              {% if not p.active %}
               <img src="https://img.shields.io/badge/github-%F0%9F%98%AD-lightgrey.svg?style=flat-square">
               {% endif %}
               {% if p.github %}
