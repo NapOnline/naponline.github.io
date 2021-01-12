@@ -52,32 +52,6 @@
               </div>
             </li>
           {% endfor %}
-          {% for p in site.data.projects %}
-            {% if p.defunct == true %}
-            {% continue %}
-            {% endif %}
-            <li><a href="{{ p.link }}">{{ p.name }}</a>
-              <div class="note">
-              {% if p.github %}
-              <a href="{{ p.github }}" title="Find on GitHub"><img src="https://img.shields.io/badge/github-project-lightgrey.svg?style=flat-square"></a>
-              {% endif %}
-              {{ p.description }}
-              </div>
-            </li>
-          {% endfor %}
-          {% for p in site.data.projects %}
-            {% if p.defunct == false %}
-            {% continue %}
-            {% endif %}
-            <li><a href="{{ p.link }}">{{ p.name }}</a>
-              <div class="note">
-              {% if p.github %}
-              <a href="{{ p.github }}" title="Find on GitHub"><img src="https://img.shields.io/badge/github-project-lightgrey.svg?style=flat-square"></a>
-              {% endif %}
-              {{ p.description }}
-              </div>
-            </li>
-          {% endfor %}
         </ul>
         <p></p>
         <ul>
