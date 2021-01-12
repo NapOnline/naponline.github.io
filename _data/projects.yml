@@ -38,6 +38,13 @@
   description: AWS API Gateway + Lambda + Route 53
   github: https://github.com/napalm255/dynamic-dns
   active: "false"
+  tags:
+    - label: AWS
+      message: API Gateway
+    - label: AWS
+      message: Lambda
+    - label: AWS
+      message: Route 53
 
 - name: secret santa
   link: /secretsanta
