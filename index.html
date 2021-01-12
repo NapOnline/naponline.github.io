@@ -41,7 +41,7 @@
           </a>
           {{ site.subtitle }}</h3>
         <ul>
-          {% assign sorted_projects = site.data.projects | sort: 'name' %}
+          {% assign sorted_projects = site.data.projects | sort: 'active', 'name' %}
           {% for p in sorted_projects %}
             <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">
