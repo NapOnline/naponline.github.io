@@ -21,16 +21,19 @@
   link: /ipcalc
   description: AWS API Gateway + Lambda
   github: https://github.com/napalm255/ip-subnet-calculator
+  defunct: true
 
 - name: commute tracker
   link: /commute
   description: AWS API Gateway + Lambda + SNS + Aurora
   github: https://github.com/napalm255/commute-data
+  defunct: true
 
 - name: dynamic dns
   link: /ddns
   description: AWS API Gateway + Lambda + Route 53
   github: https://github.com/napalm255/dynamic-dns
+  defunct: true
 
 - name: secret santa
   link: /secretsanta

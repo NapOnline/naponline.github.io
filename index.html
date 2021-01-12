@@ -42,6 +42,7 @@
           {{ site.subtitle }}</h3>
         <ul>
           {% for p in site.data.projects %}
+            {% continue if 'defunct' in p and p.defunct %}
             <li><a href="{{ p.link }}">{{ p.name }}</a>
               <div class="note">
               {% if p.github %}
@@ -52,6 +53,9 @@
             </li>
           {% endfor %}
         </ul>
+        <p></p>
+        <ul>
+        <ul>
       </section>
     </div>
 
