@@ -57,7 +57,6 @@
         {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
           {% assign remainder = forloop.index0 | modulo: 3 %}
-          {%
           {% if remainder == 0  %}
             <div class="card-deck">
           {% endif %}
