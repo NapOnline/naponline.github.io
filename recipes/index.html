@@ -97,6 +97,28 @@
                     </ul>
                   </div>
                   {% endif %}
+
+                  {% if recipe.directions.size > 0 %}
+                  <div id="{{ directionsId }}">
+                    <h4>Directions</h4>
+                    <ul id="{{ directionsId }}-List">
+                      {% for direction in recipe.directions %}
+                        <li>{{ direction }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %}
+
+                  {% if recipe.references.size > 0 %}
+                  <div id="{{ referencesId }}">
+                    <h4>References</h4>
+                    <ul id="{{ referencesId }}-List">
+                      {% for reference in recipe.references %}
+                        <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %}
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
