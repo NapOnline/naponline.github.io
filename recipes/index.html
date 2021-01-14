@@ -57,6 +57,7 @@
         {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
           {% assign remainder = forloop.index0 | modulo: 3 %}
+          {% capture modalId %}modal-{{ recipe.name | slugify }}{{ forloop.index0 }}{% endcapture %}
           {% if remainder == 0  %}
             <div class="card-deck">
           {% endif %}
@@ -69,6 +70,30 @@
             <a class="card-footer" href="#">
               <small>View Recipe</small>
             </a>
+          </div>
+          <!-- Button trigger modal -->
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#{{ modalId }}">
+            Launch demo modal
+          </button>
+          <!-- Modal -->
+          <div class="modal fade" id="{{ modalId }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLongTitle">Modal title</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  ...
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+              </div>
+            </div>
           </div>
           {% if remainder == 0 and forloop.last %}
             <div class="card" style="width: 280px; background-color: transparent;"></div>
