@@ -30,11 +30,6 @@
             text-decoration: none;
             color: #b5e853;
         }
-        .note {
-            font-style: italic;
-            font-size: 0.875em;
-            text-decoration: none;
-        }
     </style>
 
   </head>
@@ -50,10 +45,6 @@
 
     <div class="container">
       <section id="main_content">
-        <div style="width:95%; margin:10px auto;">
-          <div id="toc_header" style="color: #fff; font-size: 20px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">Recipes</div>
-          <div id="i_toc"></div>
-        </div>
         {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
           {% assign remainder = forloop.index0 | modulo: 3 %}
