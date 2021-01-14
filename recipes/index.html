@@ -54,9 +54,13 @@
           <div id="toc_header" style="color: #fff; font-size: 20px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">Recipes</div>
           <div id="i_toc"></div>
         </div>
-        {% for recipe_hash in site.data.recipes %}
-        {% assign recipe = recipe_hash[1] %}
         {% assign step = 0 %}
+        {% for recipe_hash in site.data.recipes %}
+          {% assign recipe = recipe_hash[1] %}
+          {% increment step %}
+          {% if step == 3 %}
+            {% assign step = 0 %}
+          {% endif %}
           {% if step == 0  %}
             <div class="card-deck">
           {% endif %}
