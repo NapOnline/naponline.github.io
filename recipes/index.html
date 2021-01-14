@@ -54,12 +54,15 @@
           <div id="toc_header" style="color: #fff; font-size: 20px; text-align: center; text-shadow: 0 0 5px rgba(104, 182, 255, 0.5)">Recipes</div>
           <div id="i_toc"></div>
         </div>
+        {% assign counter = 0 %}
         {% for recipe_hash in site.data.recipes %}
           {% assign recipe = recipe_hash[1] %}
           {% assign remainder = forloop.index0 | modulo: 3 %}
           {% if remainder == 0  %}
+            {% assign counter = 0 %}
             <div class="card-deck">
           {% endif %}
+          {% increment counter %}
           <div class="card bg-dark">
             <img class="card-img-top" src=".../100px180/" alt="Card image cap">
             <div class="card-body">
@@ -70,7 +73,7 @@
               <small class="text-muted">Last updated 3 mins ago</small>
             </div>
           </div>
-          {% if remainder == 0  %}
+          {% if counter == 3  %}
             </div>
           {% endif %}
         {% endfor %}
