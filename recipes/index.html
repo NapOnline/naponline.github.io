@@ -60,18 +60,16 @@
           {% if remainder == 0  %}
             <div class="card-deck">
           {% endif %}
-          <a href="#">
           <div class="card bg-dark" style="width: 280px;">
             <img class="card-img-top" src="pictures/no_image_280x180.png" alt="Card image cap">
             <div class="card-body">
               <h5 class="card-title">{{ recipe.name }}</h5>
               <p class="card-text">{{ recipe.description }}</p>
             </div>
-            <div class="card-footer">
-              <small class="text-muted">Last updated 3 mins ago</small>
-            </div>
+            <a class="card-footer">
+              <small class="text-muted">View Recipe</small>
+            </a>
           </div>
-          </a>
           {% if remainder == 0 and forloop.last %}
             <div class="card" style="width: 280px; background-color: transparent;"></div>
             <div class="card" style="width: 280px; background-color: transparent;"></div>
