@@ -68,18 +68,13 @@
               <p class="card-text text-white">{{ recipe.description }}</p>
             </div>
             <a class="card-footer" href="#" data-toggle="modal" data-target="#{{ modalId }}">
-              View Recipe
-            </a>
-            <!--
-            <a class="card-footer" href="#">
               <small>View Recipe</small>
             </a>
-            -->
           </div>
           <!-- Modal -->
           <div class="modal fade" id="{{ modalId }}" tabindex="-1" role="dialog" aria-labelledby="{{ modalId }}-title" aria-hidden="true">
             <div class="modal-dialog" role="document">
-              <div class="modal-content bg-dark">
+              <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                   <h5 class="modal-title" id="{{ modalId }}-title">{{ recipe.name }}</h5>
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
