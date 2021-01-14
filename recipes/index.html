@@ -109,7 +109,7 @@
                     <h4>References</h4>
                     <ul id="{{ referencesId }}-List">
                       {% for reference in recipe.references %}
-                        <li><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></li>
+                      <li><small><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></small></li>
                       {% endfor %}
                     </ul>
                   </div>
