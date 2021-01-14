@@ -24,6 +24,12 @@
     - label: AWS
       message: API Gateway
 
+- name: secret santa
+  link: /secretsanta
+  description: Simple secret santa pairing generator
+  github: https://github.com/napalm255/secretsanta
+  active: "true"
+
 - name: ip subnet calculator
   link: /ipcalc
   description: Simple IP address subnet calculator.
@@ -62,9 +68,3 @@
       message: Lambda
     - label: AWS
       message: Route 53
-
-- name: secret santa
-  link: /secretsanta
-  description: Simple secret santa pairing generator
-  github: https://github.com/napalm255/secretsanta
-  active: "true"
