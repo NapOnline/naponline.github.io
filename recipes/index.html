@@ -61,12 +61,12 @@
             <div class="card-deck">
           {% endif %}
           <div class="card bg-dark" style="width: 280px;">
-            <img class="card-img-top" src="pictures/no_image_280x180.png" alt="Card image cap">
+            <img class="card-img-top" src="pictures/no_image_280x180.png" alt="{{ recipe.name }}">
             <div class="card-body">
               <h5 class="card-title">{{ recipe.name }}</h5>
               <p class="card-text">{{ recipe.description }}</p>
             </div>
-            <a class="card-footer">
+            <a class="card-footer" href="#">
               <small class="text-muted">View Recipe</small>
             </a>
           </div>
