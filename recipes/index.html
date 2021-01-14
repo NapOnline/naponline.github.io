@@ -73,7 +73,7 @@
               <small class="text-muted">Last updated 3 mins ago</small>
             </div>
           </div>
-          {% if counter == 3  %}
+          {% if forloop.last or counter == 3  %}
             </div>
           {% endif %}
         {% endfor %}
