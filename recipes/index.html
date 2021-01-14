@@ -82,6 +82,17 @@
                   </button>
                 </div>
                 <div class="modal-body">
+                  {% if recipe.equipment %}
+                    <div id="{{ equipmentId }}">
+                      <h4>Equipment</h4>
+                      <ul id="{{ equipmentId }}-List">
+                        {% for item in recipe.equipment %}
+                          <li>{{ item }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  {% endif %}
+
                   {% if recipe.ingredients.size > 0 %}
                   <div id="{{ ingredientsId }}">
                     <h4>Ingredients</h4>
@@ -208,17 +219,6 @@
                       </div>
                     </div>
                   </div>
-                  {% endif %}
-
-                  {% if recipe.equipment %}
-                    <div id="{{ equipmentId }}">
-                      <h4>Equipment</h4>
-                      <ul id="{{ equipmentId }}-List">
-                        {% for item in recipe.equipment %}
-                          <li>{{ item }}</li>
-                        {% endfor %}
-                      </ul>
-                    </div>
                   {% endif %}
 
                   {% if recipe.ingredients.size > 0 %}
