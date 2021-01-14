@@ -62,7 +62,7 @@
             {% assign counter = 0 %}
             <div class="card-deck">
           {% endif %}
-          {% increment counter %}
+          {% assign counter = counter + 1 %}
           <div class="card bg-dark">
             <img class="card-img-top" src=".../100px180/" alt="Card image cap">
             <div class="card-body">
