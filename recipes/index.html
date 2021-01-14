@@ -70,6 +70,10 @@
               <small class="text-muted">Last updated 3 mins ago</small>
             </div>
           </div>
+          {% if remainder == 0 and forloop.last %}
+            <div class="card bg-dark" style="width: 280px;"></div>
+            <div class="card bg-dark" style="width: 280px;"></div>
+          {% endif %}
           {% if remainder == 2 or forloop.last %}
             </div>
             <p>&nbsp;</p>
