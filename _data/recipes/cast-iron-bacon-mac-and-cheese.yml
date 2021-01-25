@@ -1,6 +1,8 @@
 ---
 name: cast iron bacon mac and cheese
 description: mac and cheese with bacon using a cast iron skillet
+equipment:
+  - 13 inch cast iron skillet
 ingredients:
   - 1 pound elbow macaroni
   - 8 ounces bacon
