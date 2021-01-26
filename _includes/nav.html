@@ -14,12 +14,21 @@
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav navbar-right">
+              {% if page.layout == "front" %}
                 <li>
-                    <a class="page-scroll" href="index.html#about">About</a>
+                    <a class="page-scroll" href="#about">About</a>
                 </li>
                 <li>
-                    <a class="page-scroll" href="index.html#projects">Projects</a>
+                    <a class="page-scroll" href="#projects">Projects</a>
                 </li>
+              {% elsif page.layout == "recipes" %}
+                <li>
+                    <a class="page-scroll" href="#about">About</a>
+                </li>
+                <li>
+                    <a class="page-scroll" href="#projects">Recipes</a>
+                </li>
+              {% endif %}
             </ul>
         </div>
         <!-- /.navbar-collapse -->
