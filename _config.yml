@@ -1,13 +1,7 @@
 # Site settings
 title: NapOnline
-email:
-description: > # this means to ignore newlines until "baseurl:"
+description: >
   projects and beyond!
-baseurl: "/" # the subpath of your site, e.g. /blog/
-url: "https://naponline.net" # the base hostname & protocol for your site
-
-twitter_username: napalm255
-github_username: napalm255
 
 # Build settings
 markdown: kramdown
