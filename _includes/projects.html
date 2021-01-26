@@ -15,6 +15,9 @@
                 <div class="service-box wow bounceIn">
                     <h3>{{ p.name }}</h3>
                     <p class="text-muted">{{ p.description }}</p>
+                    {% if p.github %}
+                    <a href="{{ p.github }}" title="Find on GitHub"><img src="https://img.shields.io/badge/github-project-lightgrey.svg?style=flat"></a>
+                    {% endif %}
                     {% if p.tags %}
                       {% for tag in p.tags %}
                       <img src="https://img.shields.io/badge/{{ tag.label }}-{{ tag.message }}-blue.svg?style=flat">
