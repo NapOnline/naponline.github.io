@@ -11,10 +11,14 @@
         <div class="row">
           {% for p in site.data.projects %}
             <div class="col-lg-3 col-md-6 text-center">
-                <div class="service-box">
-                    <i class="fa fa-4x fa-diamond wow bounceIn text-primary"></i>
+                <div class="service-box wow bounceIn">
                     <h3>{{ p.name }}</h3>
                     <p class="text-muted">{{ p.description }}</p>
+                    {% if p.tags %}
+                      {% for tag in p.tags %}
+                      <img src="https://img.shields.io/badge/{{ tag.label }}-{{ tag.message }}-blue.svg?style=flat">
+                      {% endfor %}
+                    {% endif %}
                 </div>
             </div>
           {% endfor %}
