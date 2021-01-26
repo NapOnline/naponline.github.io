@@ -2,6 +2,9 @@
 front:
   title: NapOnline
   description: projects and beyond!
+  button:
+    href: "#projects"
+    name: Find Out More
 recipes:
   title: Recipes
   description: Recipes for Geeks!

@@ -4,7 +4,11 @@
             <h1>{{ site.data.layouts[page.layout].title }}</h1>
             <hr>
             <p>{{ site.data.layouts[page.layout].description }}</p>
-            <a href="#about" class="btn btn-primary btn-xl page-scroll">Find Out More</a>
+            {% if site.data.layouts[page.layout].button %}
+              {% assign name = site.data.layouts[page.layout].button.name %}
+              {% assign href = site.data.layouts[page.layout].button.href %}
+              <a href="{{ href }}" class="btn btn-primary btn-xl page-scroll">{{ name }}</a>
+            {% endif %}
         </div>
     </div>
 </header>
