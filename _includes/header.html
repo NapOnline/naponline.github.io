@@ -1,14 +1,10 @@
-<header>
-    <div class="header-content">
-        <div class="header-content-inner">
-            <h1>{{ site.data.layouts[page.layout].title }}</h1>
-            <hr>
-            <p>{{ site.data.layouts[page.layout].description }}</p>
-            {% if site.data.layouts[page.layout].button %}
-              {% assign name = site.data.layouts[page.layout].button.name %}
-              {% assign href = site.data.layouts[page.layout].button.href %}
-              <a href="{{ href }}" class="btn btn-primary btn-xl page-scroll">{{ name }}</a>
-            {% endif %}
-        </div>
+<header class="cover">
+  <div class="container h-100">
+    <div class="row h-100 align-items-center">
+      <div class="col-12 text-center">
+        <h1 class="font-weight-light">{{ site.data.layouts[page.layout].title }}</h1>
+        <p class="lead">{{ site.data.layouts[page.layout].description }}</p>
+      </div>
     </div>
+  </div>
 </header>
