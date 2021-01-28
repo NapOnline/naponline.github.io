@@ -5,19 +5,25 @@
   active: "true"
 
 - name: powerbash
-  link: https://powerbash.org/
+  link:
+    url: https://powerbash.org/
+    target: _blank
   description: A fast, purley bash powerline-style bash prompt.
   github: https://github.com/napalm255/powerbash
   active: "true"
 
 - name: powertmux
-  link: https://powertmux.org/
+  link:
+    url: https://powertmux.org/
+    target: _blank
   description: A customized and themed tmux configuration.
   github: https://github.com/napalm255/powertmux
   active: "true"
 
 - name: ip address
-  link: /ip
+  link:
+    url: ip.html
+    target: _self
   description: Simple IP address lookup. Output in either text or json.
   active: "true"
   tags:
@@ -25,13 +31,17 @@
       message: API Gateway
 
 - name: secret santa
-  link: /secretsanta
+  link:
+    url: /secretsanta
+    target: _blank
   description: Simple secret santa pairing generator
   github: https://github.com/napalm255/secretsanta
   active: "true"
 
 - name: ip subnet calculator
-  link: /ipcalc
+  link:
+    url: /ipcalc
+    target: _blank
   description: Simple IP address subnet calculator.
   github: https://github.com/napalm255/ip-subnet-calculator
   active: "false"
@@ -42,7 +52,9 @@
       message: Lambda
 
 - name: commute tracker
-  link: /commute
+  link:
+    url: /commute
+    target: _blank
   description: Track daily and historical commute times to and from home and work.
   github: https://github.com/napalm255/commute-data
   active: "false"
@@ -57,7 +69,9 @@
       message: Aurora
 
 - name: dynamic dns
-  link: /ddns
+  link:
+    url: /ddns
+    target: _blank
   description: Dynamic DNS solution
   github: https://github.com/napalm255/dynamic-dns
   active: "false"
