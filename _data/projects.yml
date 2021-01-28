@@ -54,9 +54,6 @@
       message: Lambda
 
 - name: commute tracker
-  link:
-    url: /commute
-    target: _blank
   description: Track daily and historical commute times to and from home and work.
   github: https://github.com/napalm255/commute-data
   active: "false"
@@ -71,9 +68,6 @@
       message: Aurora
 
 - name: dynamic dns
-  link:
-    url: /ddns
-    target: _blank
   description: Dynamic DNS solution
   github: https://github.com/napalm255/dynamic-dns
   active: "false"
