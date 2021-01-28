@@ -1,6 +1,8 @@
 ---
 - name: recipes
-  link: /recipes.html
+  link:
+    url: /recipes.html
+    target: _self
   description: Favorite recipes.
   active: "true"
 
