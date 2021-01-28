@@ -38,6 +38,12 @@ directions:
   - >
     Store the rolls in well wrapped plastic for several days at room temperature or freeze for
     longer storage.
+pictures:
+  - url: assets/recipes/no_image_280x180.png
+    size:
+      width: 35%
+      height: 35%
+    alt: dutch oven dinner rolls
 references:
   - name: Dutch Oven Dinner Rolls
     url: https://www.kingarthurbaking.com/recipes/dutch-oven-dinner-rolls-recipe
