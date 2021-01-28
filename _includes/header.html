@@ -7,7 +7,9 @@
      </div>
      <div class="col-lg-8 align-self-baseline">
        <p class="text-white-75 font-weight-light mb-5">{{ site.data.layouts[page.layout].description }}</p>
-       <a class="btn btn-primary btn-xl js-scroll-trigger" href="#about">Find Out More</a>
+       <a class="btn btn-primary btn-xl js-scroll-trigger" href="{{ site.data.layouts[page.layout].button.href }}">
+         {{ site.data.layouts[page.layout].button.name }}
+       </a>
      </div>
    </div>
  </div>
