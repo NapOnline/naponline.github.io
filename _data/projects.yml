@@ -1,6 +1,6 @@
 ---
 - name: recipes
-  link: /recipes
+  link: /recipes.html
   description: Favorite recipes.
   active: "true"
 
@@ -22,7 +22,7 @@
 
 - name: ip address
   link:
-    url: ip.html
+    url: /ip.html
     target: _self
   description: Simple IP address lookup. Output in either text or json.
   active: "true"
