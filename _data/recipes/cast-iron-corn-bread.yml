@@ -26,12 +26,12 @@ directions:
   - Scrape batter into skillet.
   - Bake 30 to 40 minutes until the top is golden brown and an inserted toothpick emerges clean.
   - Cool in the skillet for 10 minutes before slicing.
-# pictures:
-#   - url: pictures/cast-iron-corn-bread.jpg
-#     size:
-#       width: 35%
-#       height: 35%
-#     alt: cast iron corn bread
+pictures:
+  - url: assets/recipes/cast-iron-corn-bread.jpg
+    size:
+      width: 35%
+      height: 35%
+    alt: cast iron corn bread
 references:
   - name: Buttermilk Cornbread in Cast Iron Skillet
     url: https://www.camelliabrand.com/recipes/buttermilk-cornbread-in-cast-iron-skillet/

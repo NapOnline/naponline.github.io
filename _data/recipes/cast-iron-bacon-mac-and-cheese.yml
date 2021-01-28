@@ -18,7 +18,7 @@ directions:
   - Throw it all together and hope for the best...
   - Details coming soon.
 pictures:
-  - url: pictures/cast-iron-bacon-mac-and-cheese.jpg
+  - url: assets/recipes/cast-iron-bacon-mac-and-cheese.jpg
     size:
       width: 35%
       height: 35%
