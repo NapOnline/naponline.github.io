@@ -11,3 +11,9 @@ recipes:
   button:
     href: "#recipes"
     name: View Recipes
+ipcalc:
+  title: IP Subnet Calculator
+  description: Just a quick and simple IP subnet calculator.
+  button:
+    href: "#ipcalc"
+    name: Get calculating

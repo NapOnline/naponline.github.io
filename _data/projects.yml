@@ -42,8 +42,8 @@
 
 - name: ip subnet calculator
   link:
-    url: /ipcalc
-    target: _blank
+    url: /ipcalc.html
+    target: _self
   description: Simple IP address subnet calculator.
   github: https://github.com/napalm255/ip-subnet-calculator
   active: "false"
