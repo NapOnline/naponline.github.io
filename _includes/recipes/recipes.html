@@ -30,7 +30,7 @@
                 </button>
               </div>
               <div class="modal-body">
-                  {% if recipe.ingredients.size > 0 %}
+                {% if recipe.ingredients.size > 0 %}
                   <div>
                     <h4>Ingredients</h4>
                     <ul>
@@ -39,18 +39,40 @@
                       {% endfor %}
                     </ul>
                   </div>
-                  {% endif %}
+                {% endif %}
 
-                  {% if recipe.equipment %}
-                    <div>
-                      <h4>Equipment</h4>
-                      <ul>
-                        {% for item in recipe.equipment %}
-                          <li>{{ item }}</li>
-                        {% endfor %}
-                      </ul>
-                    </div>
-                  {% endif %}
+                {% if recipe.equipment %}
+                  <div>
+                    <h4>Equipment</h4>
+                    <ul>
+                      {% for item in recipe.equipment %}
+                        <li>{{ item }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+
+                {% if recipe.directions.size > 0 %}
+                  <div>
+                    <h4>Directions</h4>
+                    <ul>
+                      {% for direction in recipe.directions %}
+                        <li>{{ direction }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+
+                {% if recipe.references.size > 0 %}
+                  <div>
+                    <h4>References</h4>
+                    <ul>
+                      {% for reference in recipe.references %}
+                        <li><small><a href="{{ reference.url }}" target="_new">{{ reference.name }}</a></small></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
