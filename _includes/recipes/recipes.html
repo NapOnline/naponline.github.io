@@ -14,7 +14,7 @@
           <a class="recipes-box" href="#" data-toggle="modal" data-target="#{{ modalId }}">
             <img class="img-fluid" src="{{ default-picture }}" alt="" />
             <div class="recipes-box-caption">
-              <div class="project-name">{{ recipe.name }}</div>
+              <div class="project-name text-uppercase">{{ recipe.name }}</div>
               <div class="project-category text-white-50">{{ recipe.description }}</div>
             </div>
           </a>
@@ -24,7 +24,7 @@
           <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">{{ recipe.name }}</h5>
+                <h5 class="modal-title text-uppercase" id="modalTitle">{{ recipe.name }}</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>
