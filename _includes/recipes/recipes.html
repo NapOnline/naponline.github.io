@@ -4,12 +4,17 @@
       {% for recipe_hash in site.data.recipes %}
         {% assign recipe = recipe_hash[1] %}
         {% capture modalId %}modal{{ forloop.index }}{% endcapture %}
+        {% if recipe.pictures.size > 0 %}
+          {% capture default-picture %}{{ recipe.pictures[0].url }}{% endcapture %}
+        {% else %}
+          {% capture default-picture %}assets/recipes/placeholder.jpg{% endcapture %}
+        {% endif %}
         <div class="col-lg-3 col-sm-6">
           <a class="recipes-box" href="#" data-toggle="modal" data-target="#{{ modalId }}">
-            <img class="img-fluid" src="assets/recipes/placeholder.jpg" alt="{{ recipe.name }}" />
+            <img class="img-fluid" src="{{ default-picture }}" alt="" />
             <div class="recipes-box-caption">
-              <div class="project-category text-white-50">Category</div>
               <div class="project-name">{{ recipe.name }}</div>
+              <div class="project-category text-white-50">{{ recipe.description }}</div>
             </div>
           </a>
         </div>
