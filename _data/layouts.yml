@@ -16,4 +16,4 @@ ipcalc:
   description: Just a quick and simple IP subnet calculator.
   button:
     href: "#ipcalc"
-    name: Get calculating
+    name: Get Started
