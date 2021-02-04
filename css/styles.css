@@ -10161,7 +10161,7 @@ header.masthead h1 {
   position: absolute;
   bottom: 0;
   text-align: center;
-  opacity: 1;
+  opacity: 0.75;
   color: #fff;
   background: rgba(244, 98, 58, 0.9);
   transition: opacity 0.25s ease;
@@ -10177,5 +10177,5 @@ header.masthead h1 {
   font-size: 1.2rem;
 }
 #recipes .container-fluid .recipes-box:hover .recipes-box-caption, #recipes .container-sm .recipes-box:hover .recipes-box-caption, #recipes .container-md .recipes-box:hover .recipes-box-caption, #recipes .container-lg .recipes-box:hover .recipes-box-caption, #recipes .container-xl .recipes-box:hover .recipes-box-caption {
-  opacity: 2;
+  opacity: 1;
 }
