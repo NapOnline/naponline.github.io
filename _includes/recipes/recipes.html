@@ -6,12 +6,13 @@
         {% capture modalId %}modal{{ forloop.index }}{% endcapture %}
         {% if recipe.pictures.size > 0 %}
           {% capture default-picture %}{{ recipe.pictures[0].url }}{% endcapture %}
+          {% capture default-picture %}assets/recipes/placeholder.jpg{% endcapture %}
         {% else %}
           {% capture default-picture %}assets/recipes/placeholder.jpg{% endcapture %}
         {% endif %}
         <div class="col-lg-3 col-sm-6">
           <a class="recipes-box" href="#" data-toggle="modal" data-target="#{{ modalId }}">
-            <img class="img-fluid" style="max-width: 650px; max-height: 350px;" src="{{ default-picture }}" alt="" />
+            <img class="img-fluid" src="{{ default-picture }}" alt="" />
             <div class="recipes-box-caption">
               <div class="project-name">{{ recipe.name }}</div>
               <div class="project-category text-white-50">{{ recipe.description }}</div>
