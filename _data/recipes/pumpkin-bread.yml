@@ -1,0 +1,44 @@
+---
+name: pumpkin bread
+description: the best pumpkin bread
+equipment:
+  - 2 9"x5" load pans
+ingredients:
+  - Unsalted butter, for the pans
+  - 420 grams (3 1/2 cups) all-purpose flour, plus more for the pan (see Cook's Note)
+  - 594 grams (3 cups) sugar
+  - 1 cup vegetable oil
+  - 4 large eggs, lightly beaten
+  - 1 15-ounce can pure pumpkin puree
+  - 2 teaspoons fine salt
+  - 2 teaspoons baking soda
+  - 1 teaspoon baking powder
+  - 1 teaspoon ground nutmeg
+  - 1 teaspoon ground allspice
+  - 1 teaspoon ground cinnamon
+  - 1/2 teaspoon ground cloves
+  - 2/3 cup water
+directions:
+  - Preheat oven to 350 degrees F.
+  - Butter and flour two 9"x5" loaf pans.
+  - Whisk together the sugar and oil in a large bowl until well combined.
+  - Whisk in the eggs and pumpkin and until combined.
+  - Combine the flour, salt, baking soda, baking powder, nutmeg, allspice, cinnamon and ground cloves in a medium bowl and whisk until well combined.
+  - Add half the dry ingredients to the pumpkin mixture and stir to combine.
+  - Add half (1/3) the water and stir to combine.
+  - Add the other half of the dry ingredients and stir to combine.
+  - Add the other half (1/3) of the water and stir to combine.
+  - Divide the batter between the prepared loaf pans.
+  - Bake for about 1 hour (until cake tester comes out clean and the loaves are golden brown).
+  - Let the loaves cool in the pans on a wire rack for 10 minutes.
+  - Remove loaves from the pans and let cool completely, about 1 hour.
+pictures:
+  - url: https://food.fnr.sndimg.com/content/dam/images/food/fullset/2019/9/9/0/FNK_the-best-pumpkin-bread_H.jpg.rend.hgtvcom.826.620.suffix/1568135328378.jpeg
+    # url: pictures/cast-iron-bacon-mac-and-cheese.jpg
+    size:
+      width: 35%
+      height: 35%
+    alt: pumpkin bread
+references:
+  - name: The Best Pumpkin Bread
+    url: https://www.foodnetwork.com/recipes/pumpkin-bread-recipe-1957866
