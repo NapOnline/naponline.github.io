@@ -17,15 +17,21 @@
         </span>
       </span>
       <span class="hud-item hud-item--power" id="game-power" hidden>ROOT ACCESS <strong id="game-power-timer"></strong></span>
+      <button type="button" class="game-achievements-btn" id="game-achievements-btn" aria-expanded="false" aria-label="View achievements">&#127942;</button>
       <button type="button" class="game-mute-btn" id="game-mute" aria-pressed="false" aria-label="Mute sound">&#128266;</button>
     </div>
 
     <div class="game-canvas-frame">
       <canvas id="platformer-canvas" role="img" aria-label="DevOps platformer game board"></canvas>
       <div class="game-hit-flash" id="game-hit-flash"></div>
+      <div class="game-perfect-flash" id="game-perfect-flash"></div>
+      <div class="game-combo" id="game-combo"></div>
+      <div class="game-achievement-toast" id="game-achievement-toast"></div>
+      <ul class="game-achievements-panel" id="game-achievements-panel" hidden></ul>
       <div class="game-overlay" id="game-overlay">
         <button type="button" class="btn btn-primary" id="game-start">Start Game</button>
         <p class="game-overlay__msg" id="game-message"></p>
+        <p class="game-overlay__stats" id="game-stats" hidden></p>
         <ul class="game-bonuses" id="game-bonuses" hidden></ul>
         <ol class="game-highscores" id="game-highscores" hidden></ol>
       </div>

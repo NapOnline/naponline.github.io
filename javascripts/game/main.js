@@ -15,6 +15,7 @@ import { createCollectible, createGoal, createPole, POLE_HEIGHT } from "./collec
 import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
 import { setupTouchControls } from "./input.js";
 import { loadHighScores, submitHighScore, getTopScore } from "./highscores.js";
+import { ACHIEVEMENTS, loadUnlocked, unlock as unlockAchievement } from "./achievements.js";
 import * as audio from "./audio.js";
 
 const VIEW_W = 480;
@@ -36,6 +37,27 @@ const NO_POWER_BONUS = 250;
 const NO_HEAL_BONUS = 250;
 const SPEED_BONUS_MAX = 1000;
 const SPEED_BONUS_DECAY_PER_SEC = 8;
+// Shot-efficiency bonus: a continuous taper around totalMinShots (computed
+// per-level in buildLevel() from each enemy's configured health) — at or
+// under par scores the max bonus, every shot past par shrinks it, and past
+// the zero crossing it becomes a growing penalty (floored so spamming the
+// fire button can't spiral the score arbitrarily negative).
+const SHOT_BONUS_MAX = 500;
+const SHOT_DECAY_PER_SHOT = 15;
+const SHOT_PENALTY_CAP = 300;
+// Extra flat nod for clearing the level without ever firing — the taper
+// above already maxes out at 0 shots, this stacks an additional callout.
+const PACIFIST_BONUS = 150;
+// Kill-streak combo: chaining kills within this window escalates a bonus,
+// awarded immediately at each extension (see defeatEnemy()).
+const COMBO_WINDOW_MS = 2000;
+const COMBO_BONUS_PER_STEP = 25;
+// Perfect Run: never hit, every enemy defeated, everything collected, and
+// Root Access never touched.
+const PERFECT_RUN_BONUS = 1000;
+// How long the player plays its death animation before the game-over
+// overlay appears (see handlePlayerHit()/finishGameOver()).
+const DEATH_ANIM_MS = 650;
 
 const ENEMY_SYMBOLS = { b: "bug", l: "latency-spike", p: "failed-pipeline", o: "outage" };
 
@@ -76,12 +98,18 @@ function init() {
   const powerTimerEl = document.getElementById("game-power-timer");
   const overlayEl = document.getElementById("game-overlay");
   const messageEl = document.getElementById("game-message");
+  const statsEl = document.getElementById("game-stats");
   const bonusesEl = document.getElementById("game-bonuses");
   const highscoresEl = document.getElementById("game-highscores");
   const startBtn = document.getElementById("game-start");
   const muteBtn = document.getElementById("game-mute");
+  const achievementsBtn = document.getElementById("game-achievements-btn");
+  const achievementsPanelEl = document.getElementById("game-achievements-panel");
+  const achievementToastEl = document.getElementById("game-achievement-toast");
   const touchControls = document.getElementById("game-touch-controls");
   const hitFlashEl = document.getElementById("game-hit-flash");
+  const comboEl = document.getElementById("game-combo");
+  const perfectFlashEl = document.getElementById("game-perfect-flash");
 
   kaplay({
     canvas,
@@ -136,6 +164,23 @@ function init() {
   let playerSpawn = { x: 0, y: 0 };
   let totalCollectibles = 0;
   let collectedCount = 0;
+  // Cash specifically, not totalCollectibles/collectedCount — those also
+  // include the Root Access key, and requiring the key would make Perfect
+  // Run (which requires never touching Root Access) impossible to satisfy
+  // at the same time, since collecting the key is what activates it. The
+  // user's own definition of a clean run was "all the cash", not the key.
+  let totalCash = 0;
+  let collectedCash = 0;
+  // Level-derived par for the shot-efficiency bonus (sum of every enemy's
+  // configured health) and the enemy-clear tally for the Perfect Run check
+  // — both accumulated in buildLevel() alongside totalCollectibles.
+  let totalMinShots = 0;
+  let totalEnemies = 0;
+  let defeatedEnemyCount = 0;
+  // How many of those kills were specifically via bullet — the Sharpshooter
+  // achievement requires every enemy to go down to gunfire, not just an
+  // efficient total shot count (see defeatEnemy()).
+  let bulletKillCount = 0;
   let shootCooldownMs = 0;
   // Counts down after a side-hit knockback; while > 0, the movement input
   // block below leaves player.vel.x alone instead of overwriting it every
@@ -151,10 +196,22 @@ function init() {
   // Non-null while the player is riding the bonus pole down to the goal —
   // see the "pole" collision handler and updateClimb() below.
   let climb = null;
+  // Kill-streak combo — see defeatEnemy() and the COMBO_* constants above.
+  let comboCount = 0;
+  let comboTimerMs = 0;
+  // Counts down while the player's death animation plays after a fatal hit;
+  // finishGameOver() (submit score, show the overlay) is deferred until it
+  // reaches 0 instead of firing immediately — see handlePlayerHit()/onUpdate.
+  let deathAnimMs = 0;
+  let deathSourceLabel = "";
 
   function buildLevel() {
     collectedCount = 0;
     totalCollectibles = 0;
+    totalCash = 0;
+    collectedCash = 0;
+    totalMinShots = 0;
+    totalEnemies = 0;
 
     // Tiled background layer, well behind everything else. buildLevel()
     // only ever runs once (see resetRound()'s comment), so this is created
@@ -212,25 +269,38 @@ function init() {
           player = createPlayer(playerSpawn.x, playerSpawn.y);
           return [];
         },
+        // totalMinShots/totalEnemies feed the shot-efficiency bonus and the
+        // Perfect Run check in winRound() — both level-derived, not
+        // hardcoded, so they stay correct if the level or any enemy's
+        // configured health changes.
         b: (tilePos) => {
           createEnemy(ENEMY_SYMBOLS.b, tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          totalMinShots += ENEMY_CONFIGS[ENEMY_SYMBOLS.b].health;
+          totalEnemies += 1;
           return [];
         },
         l: (tilePos) => {
           createEnemy(ENEMY_SYMBOLS.l, tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          totalMinShots += ENEMY_CONFIGS[ENEMY_SYMBOLS.l].health;
+          totalEnemies += 1;
           return [];
         },
         p: (tilePos) => {
           createEnemy(ENEMY_SYMBOLS.p, tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          totalMinShots += ENEMY_CONFIGS[ENEMY_SYMBOLS.p].health;
+          totalEnemies += 1;
           return [];
         },
         o: (tilePos) => {
           createEnemy(ENEMY_SYMBOLS.o, tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          totalMinShots += ENEMY_CONFIGS[ENEMY_SYMBOLS.o].health;
+          totalEnemies += 1;
           return [];
         },
         c: (tilePos) => {
           createCollectible("cash", tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
           totalCollectibles += 1;
+          totalCash += 1;
           return [];
         },
         k: (tilePos) => {
@@ -273,6 +343,12 @@ function init() {
     // went through addLevel() — bullets — are the one thing safe to
     // destroy() outright.
     collectedCount = 0;
+    collectedCash = 0;
+    defeatedEnemyCount = 0;
+    bulletKillCount = 0;
+    comboCount = 0;
+    comboTimerMs = 0;
+    deathAnimMs = 0;
     climb = null;
     hitStunMs = 0;
     playerLayer = "full";
@@ -322,6 +398,9 @@ function init() {
     highscoresEl.innerHTML = list.map((entry) => `<li>${entry.score}</li>`).join("");
   }
 
+  // Each line is { text, isPenalty } — the shot-efficiency bonus can go
+  // negative (spamming the fire button), rendered distinctly (red "−")
+  // from the normal green "+" bonus lines via the is-penalty class.
   function renderBonuses(lines) {
     if (!bonusesEl) return;
     if (!lines || lines.length === 0) {
@@ -330,13 +409,32 @@ function init() {
       return;
     }
     bonusesEl.hidden = false;
-    bonusesEl.innerHTML = lines.map((line) => `<li>${line}</li>`).join("");
+    bonusesEl.innerHTML = lines
+      .map((line) => `<li class="${line.isPenalty ? "is-penalty" : ""}">${line.text}</li>`)
+      .join("");
+  }
+
+  // Accuracy — shotsHit/shotsFired — shown on every overlay that follows a
+  // round with at least one shot fired (win or game-over alike); stays
+  // hidden on the very first "Start Game" screen and on a Pacifist/
+  // stomp-only run, where state.accuracyPercent is null.
+  function renderStats() {
+    if (!statsEl) return;
+    if (state.accuracyPercent === null) {
+      statsEl.hidden = true;
+      statsEl.textContent = "";
+      return;
+    }
+    statsEl.hidden = false;
+    statsEl.textContent = `Accuracy: ${state.accuracyPercent}% (${state.shotsHit}/${state.shotsFired} shots hit)`;
   }
 
   function showOverlay(message, buttonLabel, bonusLines) {
     overlayEl.hidden = false;
+    overlayEl.classList.remove("game-overlay--perfect");
     messageEl.textContent = message;
     startBtn.textContent = buttonLabel;
+    renderStats();
     renderBonuses(bonusLines);
     renderHighScores();
   }
@@ -395,6 +493,15 @@ function init() {
     syncMuteBtn();
   }
 
+  if (achievementsBtn && achievementsPanelEl) {
+    achievementsBtn.addEventListener("click", () => {
+      const opening = achievementsPanelEl.hidden;
+      if (opening) renderAchievementsPanel();
+      achievementsPanelEl.hidden = !opening;
+      achievementsBtn.setAttribute("aria-expanded", String(opening));
+    });
+  }
+
   buildLevel();
   if (bestEl) bestEl.textContent = getTopScore();
   showOverlay("Run, jump, and reach Deploy to Production.", "Start Game");
@@ -406,6 +513,55 @@ function init() {
     // if a previous flash is still fading out from a hit taken moments ago.
     void hitFlashEl.offsetWidth;
     hitFlashEl.classList.add("is-active");
+  }
+
+  function triggerComboPopup(text) {
+    if (!comboEl) return;
+    comboEl.textContent = text;
+    comboEl.classList.remove("is-active");
+    void comboEl.offsetWidth;
+    comboEl.classList.add("is-active");
+  }
+
+  function triggerPerfectFlash() {
+    if (!perfectFlashEl) return;
+    perfectFlashEl.classList.remove("is-active");
+    void perfectFlashEl.offsetWidth;
+    perfectFlashEl.classList.add("is-active");
+  }
+
+  function triggerAchievementToast(text) {
+    if (!achievementToastEl) return;
+    achievementToastEl.textContent = text;
+    achievementToastEl.classList.remove("is-active");
+    void achievementToastEl.offsetWidth;
+    achievementToastEl.classList.add("is-active");
+  }
+
+  // Attempts to unlock each id, and if any are newly unlocked (not already
+  // owned from a previous run), shows a single combined toast — several can
+  // land in the same win (e.g. a first-ever win that's also a Perfect Run).
+  function announceUnlocks(ids) {
+    const newlyUnlocked = ids.filter((id) => unlockAchievement(id));
+    if (newlyUnlocked.length === 0) return;
+    const names = newlyUnlocked.map((id) => ACHIEVEMENTS.find((a) => a.id === id)?.name ?? id);
+    const label =
+      newlyUnlocked.length === 1
+        ? `\u{1F3C6} Achievement unlocked: ${names[0]}!`
+        : `\u{1F3C6} ${newlyUnlocked.length} achievements unlocked: ${names.join(", ")}!`;
+    triggerAchievementToast(label);
+  }
+
+  function renderAchievementsPanel() {
+    if (!achievementsPanelEl) return;
+    const unlocked = loadUnlocked();
+    achievementsPanelEl.innerHTML = ACHIEVEMENTS.map((a) => {
+      const isUnlocked = Boolean(unlocked[a.id]);
+      return `<li class="${isUnlocked ? "is-unlocked" : "is-locked"}">
+        <strong>${isUnlocked ? "\u{1F3C6}" : "\u{1F512}"} ${a.name}</strong>
+        ${isUnlocked ? `<span>${a.description}</span>` : ""}
+      </li>`;
+    }).join("");
   }
 
   function respawnAfterHit() {
@@ -427,6 +583,17 @@ function init() {
     });
   }
 
+  // Extracted so it can fire either right away or (on a fatal hit) after
+  // the death animation plays — see handlePlayerHit()'s gameOver branch and
+  // the deathAnimMs branch in onUpdate().
+  function finishGameOver() {
+    const { rank } = submitHighScore(state.score);
+    if (bestEl) bestEl.textContent = getTopScore();
+    const scoreNote = rank === 1 ? " New best!" : rank ? " High score!" : "";
+    audio.playLose();
+    showOverlay(`Redundancy exhausted — taken down by ${deathSourceLabel}. Game over.${scoreNote}`, "Try Again");
+  }
+
   function handlePlayerHit(sourceLabel, opts = {}) {
     // A hit no longer pauses play for a "Continue" click — it costs a
     // redundancy node, flashes/knocks the player back, and grants a brief
@@ -437,11 +604,16 @@ function init() {
     triggerHitFlash();
     audio.playHit();
     if (gameOver) {
-      const { rank } = submitHighScore(state.score);
-      if (bestEl) bestEl.textContent = getTopScore();
-      const scoreNote = rank === 1 ? " New best!" : rank ? " High score!" : "";
-      audio.playLose();
-      showOverlay(`Redundancy exhausted — taken down by ${sourceLabel}. Game over.${scoreNote}`, "Try Again");
+      // Play the death animation in place before handing off to
+      // finishGameOver() — see the deathAnimMs branch in onUpdate(), which
+      // runs ahead of the normal !state.isPlaying gate so the animation
+      // isn't frozen the instant state flips to LOSE.
+      deathSourceLabel = sourceLabel;
+      deathAnimMs = DEATH_ANIM_MS;
+      playerLayer = "full";
+      player.use(sprite("player", { anim: "death" }));
+      player.legs.hidden = true;
+      player.vel.x = 0;
       return;
     }
     state.triggerHitInvincibility(HIT_INVINCIBLE_MS);
@@ -459,7 +631,7 @@ function init() {
     }
   }
 
-  function defeatEnemy(enemy, scoreValue) {
+  function defeatEnemy(enemy, scoreValue, method) {
     // Never destroy() — see the comment in resetRound(). Hiding + pausing +
     // moving far away is functionally equivalent (invisible, inert, can't
     // collide) without ever touching the object graph after initial build.
@@ -473,16 +645,33 @@ function init() {
     enemy.paused = true;
     enemy.pos.x = -9999;
     state.addScore(scoreValue);
+    defeatedEnemyCount += 1;
+    // Sharpshooter achievement tracks HOW every kill happened, not just how
+    // many shots were fired — bulletKillCount only reaches totalEnemies if
+    // every single enemy went down to gunfire, with no stomps/Root Access.
+    if (method === "bullet") bulletKillCount += 1;
+
+    // Kill-streak combo: chaining kills within COMBO_WINDOW_MS of each
+    // other escalates a bonus, awarded immediately at each extension (not
+    // deferred to when the window lapses) so the feedback stays legible.
+    comboCount = comboTimerMs > 0 ? comboCount + 1 : 1;
+    comboTimerMs = COMBO_WINDOW_MS;
+    if (comboCount >= 2) {
+      const comboBonus = (comboCount - 1) * COMBO_BONUS_PER_STEP;
+      state.addScore(comboBonus);
+      triggerComboPopup(`${comboCount}x COMBO +${comboBonus}!`);
+    }
+    if (comboCount >= 4) announceUnlocks(["combo-master"]);
   }
 
   function winRound(bonus, bonusLabel) {
     if (state.isOver) return;
     let total = bonus;
     const bonusLines = [];
-    if (bonusLabel) bonusLines.push(bonusLabel);
+    if (bonusLabel) bonusLines.push({ text: bonusLabel, isPenalty: false });
     if (totalCollectibles > 0 && collectedCount >= totalCollectibles) {
       total += 300;
-      bonusLines.push("Full Deploy bonus +300!");
+      bonusLines.push({ text: "Full Deploy bonus +300!", isPenalty: false });
     }
     // Clean-run bonuses — reward finishing with redundancy to spare, never
     // touching Root Access, never needing the heal pickup, and finishing
@@ -492,31 +681,100 @@ function init() {
     if (redundancyBonus > 0) {
       total += redundancyBonus;
       const nodeWord = state.redundancy === 1 ? "node" : "nodes";
-      bonusLines.push(`Redundancy bonus +${redundancyBonus}! (${state.redundancy} ${nodeWord} left)`);
+      bonusLines.push({
+        text: `Redundancy bonus +${redundancyBonus}! (${state.redundancy} ${nodeWord} left)`,
+        isPenalty: false,
+      });
     }
     if (!state.usedPower) {
       total += NO_POWER_BONUS;
-      bonusLines.push(`No Root Access needed +${NO_POWER_BONUS}!`);
+      bonusLines.push({ text: `No Root Access needed +${NO_POWER_BONUS}!`, isPenalty: false });
     }
     if (!state.usedHeal) {
       total += NO_HEAL_BONUS;
-      bonusLines.push(`Self-healing-free +${NO_HEAL_BONUS}!`);
+      bonusLines.push({ text: `Self-healing-free +${NO_HEAL_BONUS}!`, isPenalty: false });
     }
     const elapsedSeconds = state.elapsedMs / 1000;
     const speedBonus = Math.max(0, Math.round(SPEED_BONUS_MAX - elapsedSeconds * SPEED_BONUS_DECAY_PER_SEC));
     if (speedBonus > 0) {
       total += speedBonus;
-      bonusLines.push(`Speed bonus +${speedBonus}!`);
+      bonusLines.push({ text: `Speed bonus +${speedBonus}!`, isPenalty: false });
     }
+
+    // Shot efficiency — a continuous taper around the level's par
+    // (totalMinShots, accumulated in buildLevel() from each enemy's
+    // configured health): at/under par scores the max bonus, every shot
+    // past it shrinks the bonus, and past the zero crossing it becomes a
+    // growing penalty, floored so spamming fire can't spiral the score
+    // arbitrarily negative.
+    const overPar = state.shotsFired - totalMinShots;
+    const rawShotBonus = overPar <= 0 ? SHOT_BONUS_MAX : Math.round(SHOT_BONUS_MAX - overPar * SHOT_DECAY_PER_SHOT);
+    const shotBonus = Math.max(rawShotBonus, -SHOT_PENALTY_CAP);
+    if (shotBonus !== 0) {
+      total += shotBonus;
+      const text =
+        shotBonus > 0
+          ? `Sharpshooter bonus +${shotBonus}! (${state.shotsFired} shots, par ${totalMinShots})`
+          : `Trigger-happy penalty ${shotBonus}! (${state.shotsFired} shots, par ${totalMinShots})`;
+      bonusLines.push({ text, isPenalty: shotBonus < 0 });
+    }
+    // A deliberate extra nod on top of the curve above, which already caps
+    // out at 0 shots — this calls out the literal zero-shots case by name.
+    if (state.shotsFired === 0) {
+      total += PACIFIST_BONUS;
+      bonusLines.push({ text: `Pacifist bonus +${PACIFIST_BONUS}! Not a single shot fired.`, isPenalty: false });
+    }
+
+    // Cash specifically (totalCash/collectedCash), not totalCollectibles —
+    // that also counts the Root Access key, which would make this
+    // impossible to satisfy alongside !state.usedPower (collecting the key
+    // is what activates it).
+    const isPerfect =
+      defeatedEnemyCount >= totalEnemies &&
+      collectedCash >= totalCash &&
+      !state.tookDamage &&
+      !state.usedPower;
+    if (isPerfect) {
+      total += PERFECT_RUN_BONUS;
+      bonusLines.push({ text: `Perfect Run bonus +${PERFECT_RUN_BONUS}!`, isPenalty: false });
+    }
+
     if (total > 0) state.addScore(total);
     state.win();
-    audio.playWin();
+
     const { rank } = submitHighScore(state.score);
     if (bestEl) bestEl.textContent = getTopScore();
-    let message = "Deployed to production!";
+
+    const unlockIds = ["first-deploy"];
+    if (state.shotsFired === 0) unlockIds.push("pacifist");
+    // Every enemy defeated, and every one of them via bullet — not shot
+    // count efficiency (that's the separate Sharpshooter score bonus above).
+    if (totalEnemies > 0 && bulletKillCount >= totalEnemies) unlockIds.push("sharpshooter");
+    if (isPerfect) unlockIds.push("perfect-run");
+    if (state.redundancy === 1) unlockIds.push("iron-will");
+    announceUnlocks(unlockIds);
+
+    let message = isPerfect ? "PERFECT RUN — flawless deploy!" : "Deployed to production!";
     if (rank === 1) message += " New best!";
     else if (rank) message += " High score!";
-    showOverlay(message, "Play Again", bonusLines);
+
+    const reveal = () => showOverlay(message, "Play Again", bonusLines);
+
+    if (isPerfect) {
+      // A brief on-canvas flourish before the overlay lands — gold screen
+      // flash + camera shake, sequenced on Kaplay's own clock (wait()) so
+      // it stays in step with the game loop rather than a raw setTimeout.
+      audio.playPerfectWin();
+      triggerPerfectFlash();
+      shake(12);
+      wait(0.5, () => {
+        reveal();
+        overlayEl.classList.add("game-overlay--perfect");
+      });
+    } else {
+      audio.playWin();
+      reveal();
+    }
   }
 
   function updateClimb() {
@@ -547,11 +805,24 @@ function init() {
       powerEl.hidden = true;
     }
 
+    // Runs even though state.state has already flipped to LOSE (so the
+    // !state.isPlaying gate right below would otherwise freeze it) — plays
+    // the death pose in place for DEATH_ANIM_MS, then hands off to the
+    // deferred game-over overlay/high-score submission.
+    if (deathAnimMs > 0 && player) {
+      deathAnimMs -= dt() * 1000;
+      player.vel.x = 0;
+      player.vel.y = 0;
+      if (deathAnimMs <= 0) finishGameOver();
+      return;
+    }
+
     if (!state.isPlaying || !player) return;
 
     state.tick(dt() * 1000);
     if (shootCooldownMs > 0) shootCooldownMs -= dt() * 1000;
     if (hitStunMs > 0) hitStunMs -= dt() * 1000;
+    if (comboTimerMs > 0) comboTimerMs -= dt() * 1000;
 
     player.opacity = state.isHitInvincible ? (Math.floor(state.hitTimer / 90) % 2 === 0 ? 1 : 0.35) : 1;
     player.legs.opacity = player.opacity;
@@ -628,17 +899,18 @@ function init() {
     const dir = player.flipX ? -1 : 1;
     createBullet("player", player.pos.x + (dir > 0 ? 42 : -12), player.pos.y + 16, dir);
     audio.playShoot();
+    state.shotsFired += 1;
   });
 
   onCollide("player", "enemy", (playerObj, enemy, col) => {
     if (!state.isPlaying || enemy.defeated || climb) return;
     if (state.isHitInvincible) return;
     if (state.isPowered) {
-      defeatEnemy(enemy, 200);
+      defeatEnemy(enemy, 200, "power");
       return;
     }
     if (col && col.isBottom()) {
-      defeatEnemy(enemy, 200);
+      defeatEnemy(enemy, 200, "stomp");
       playerObj.jump(JUMP_FORCE / 2);
     } else {
       handlePlayerHit(enemy.label, { knockbackDir: playerObj.pos.x < enemy.pos.x ? -1 : 1 });
@@ -649,8 +921,9 @@ function init() {
     destroy(bullet);
     if (!state.isPlaying || enemy.defeated || state.isHitInvincible) return;
     enemy.health -= 1;
+    state.shotsHit += 1;
     if (enemy.health <= 0) {
-      defeatEnemy(enemy, 150);
+      defeatEnemy(enemy, 150, "bullet");
     } else {
       enemy.hitFlashMs = ENEMY_HIT_FLASH_MS;
     }
@@ -685,6 +958,7 @@ function init() {
     } else {
       state.addScore(10);
       audio.playCollectCash();
+      collectedCash += 1;
     }
   });
 

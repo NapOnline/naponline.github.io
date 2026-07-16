@@ -132,6 +132,18 @@ export function playWin() {
   tone({ type: "square", freq: 1047, duration: 0.22, gain: 0.18, delay: 0.3 });
 }
 
+// A longer, wider fanfare than playWin() — reserved for a Perfect Run.
+export function playPerfectWin() {
+  tone({ type: "square", freq: 523, duration: 0.09, gain: 0.16 });
+  tone({ type: "square", freq: 659, duration: 0.09, gain: 0.16, delay: 0.09 });
+  tone({ type: "square", freq: 784, duration: 0.09, gain: 0.16, delay: 0.18 });
+  tone({ type: "square", freq: 1047, duration: 0.09, gain: 0.18, delay: 0.27 });
+  tone({ type: "square", freq: 1319, duration: 0.28, gain: 0.2, delay: 0.36 });
+  // A little shimmering sparkle on top of the held final note.
+  tone({ type: "triangle", freq: 1568, duration: 0.16, gain: 0.12, delay: 0.36 });
+  tone({ type: "triangle", freq: 2093, duration: 0.16, gain: 0.1, delay: 0.46 });
+}
+
 export function playLose() {
   tone({ type: "sawtooth", freq: 300, duration: 0.16, gain: 0.16 });
   tone({ type: "sawtooth", freq: 220, duration: 0.16, gain: 0.16, delay: 0.15 });

@@ -19,11 +19,20 @@ export class GameState {
     this.hitTimer = 0;
     // Tracked for the end-of-run bonus breakdown in main.js's winRound() —
     // whether this run ever touched Root Access or the redundancy-restore
-    // pickup (a clean run scores more for needing neither), and how long
-    // the run has taken so far (a faster run scores more).
+    // pickup (a clean run scores more for needing neither), how long the
+    // run has taken so far (a faster run scores more), how many shots have
+    // been fired (fewer, relative to the level's par, scores more), and
+    // whether the player has ever taken damage this run (required for the
+    // Perfect Run bonus/celebration).
     this.usedPower = false;
     this.usedHeal = false;
     this.elapsedMs = 0;
+    this.shotsFired = 0;
+    // Shots that actually landed on an enemy (whether or not that hit was
+    // the killing blow) — shotsHit/shotsFired is the run's accuracy, shown
+    // at the end regardless of whether the run was won or lost.
+    this.shotsHit = 0;
+    this.tookDamage = false;
   }
 
   start() {
@@ -31,6 +40,16 @@ export class GameState {
     this.usedPower = false;
     this.usedHeal = false;
     this.elapsedMs = 0;
+    this.shotsFired = 0;
+    this.shotsHit = 0;
+    this.tookDamage = false;
+  }
+
+  // Accuracy as a whole-number percent, or null when no shots were fired
+  // (a stomp-only/Pacifist run has no meaningful accuracy to report).
+  get accuracyPercent() {
+    if (this.shotsFired === 0) return null;
+    return Math.round((this.shotsHit / this.shotsFired) * 100);
   }
 
   addScore(points) {
@@ -58,6 +77,7 @@ export class GameState {
   }
 
   loseSegment() {
+    this.tookDamage = true;
     this.redundancy -= 1;
     if (this.redundancy <= 0) {
       this.state = STATES.LOSE;

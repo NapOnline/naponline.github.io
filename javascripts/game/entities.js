@@ -7,12 +7,16 @@
 // standing pose (its upper portion is cropped into assets/player-torso.png
 // — see below), row 3 col 6 has the gun raised overhead with a muzzle
 // flash (used as the "jump" pose, rendered from this full sheet exactly as
-// before). This table only covers those two root-object states now —
-// grounded movement is driven by the separate legs child, not by animating
-// this sheet (see LEGS_ANIMS/createPlayer()).
+// before), and row 7 cols 0-4 (frames 56-60) are a previously-unused
+// fall-and-collapse sequence — falling backward mid-air, arcing down,
+// sprawled, then prone — played on a fatal hit (see main.js's
+// handlePlayerHit()/finishGameOver()). This table only covers root-object
+// states now — grounded movement is driven by the separate legs child, not
+// by animating this sheet (see LEGS_ANIMS/createPlayer()).
 export const PLAYER_ANIMS = {
   idle: { from: 0, to: 0 },
   jump: { from: 30, to: 30 },
+  death: { from: 56, to: 60, loop: false, speed: 8 },
 };
 
 // Frames 18-27 of the sheet above are standalone legs-only art (no
