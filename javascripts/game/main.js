@@ -934,12 +934,24 @@ function init() {
       createBullet("enemy", enemy.pos.x + (dir > 0 ? 30 : -10), enemy.pos.y + 14, dir);
     });
 
+    const camX = Math.min(Math.max(player.pos.x, VIEW_W / 2), LEVEL_WIDTH - VIEW_W / 2);
+
     get("bullet").forEach((bullet) => {
       bullet.pos.x += bullet.dir * BULLET_SPEED * dt();
-      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40) destroy(bullet);
+      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40) {
+        destroy(bullet);
+        return;
+      }
+      // Player shots shouldn't be able to snipe an enemy that's scrolled
+      // off screen — despawn once a player bullet leaves the visible
+      // camera range (same 40px margin as the level-bounds check above, so
+      // it disappears just past the edge rather than at the exact pixel
+      // boundary). Enemy bullets are unaffected — they're already limited
+      // to short bursts/turret range, not free-flying the whole level.
+      if (bullet.ownerTag !== "player") return;
+      if (bullet.pos.x < camX - VIEW_W / 2 - 40 || bullet.pos.x > camX + VIEW_W / 2 + 40) destroy(bullet);
     });
 
-    const camX = Math.min(Math.max(player.pos.x, VIEW_W / 2), LEVEL_WIDTH - VIEW_W / 2);
     setCamPos(camX, VIEW_H / 2);
   });
 
