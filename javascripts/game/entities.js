@@ -7,10 +7,14 @@
 // standing pose (its upper portion is cropped into assets/player-torso.png
 // — see below). Row 3 cols 4-5 (frames 28-29) are a crouched, gun-forward
 // pose with a horizontal muzzle flash — the "shoot" anim, used whenever
-// shootPoseMs is active in main.js, grounded or airborne. There is no
-// dedicated mid-air pose anywhere in this sheet (every other full-body
-// pose reads as standing/crouched-on-ground), so airborne-and-not-shooting
-// just reuses "idle" rather than a mislabeled pose. Row 7 cols 0-4 (frames
+// shootPoseMs is active in main.js, grounded or airborne. Like
+// player-torso.png, these two frames are upper-body-only crops — their
+// pixel content stops around y=31 of the 45-tall cell, nowhere near the
+// legs — so main.js keeps the separate legs child visible under this anim
+// too, not just under player-torso. There is no dedicated mid-air pose
+// anywhere in this sheet (every other full-body pose reads as
+// standing/crouched-on-ground), so airborne-and-not-shooting just reuses
+// "idle" rather than a mislabeled pose. Row 7 cols 0-4 (frames
 // 56-60) are a previously-unused fall-and-collapse sequence — falling
 // backward mid-air, arcing down, sprawled, then prone — played on a fatal
 // hit (see main.js's handlePlayerHit()/finishGameOver()). This table only

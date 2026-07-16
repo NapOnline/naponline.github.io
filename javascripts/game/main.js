@@ -890,15 +890,20 @@ function init() {
     // Airborne (and not shooting): the full sheet's idle pose, which
     // already has its own baked-in legs — there's no dedicated mid-air
     // pose in this sheet (see entities.js's PLAYER_ANIMS comment), so idle
-    // reads better than the old gun-raised pose did. Either full-sheet case
-    // hides the legs child so it doesn't double up.
+    // reads better than the old gun-raised pose did; that case hides the
+    // legs child so it doesn't double up. The shoot frames (28-29) are
+    // upper-body-only crops just like player-torso — no baked-in legs at
+    // all (confirmed by their pixel bounds) — so unlike idle, this case
+    // must keep the legs child visible or the player renders legless.
     if (shootPoseMs > 0) {
       if (playerLayer !== "full" || playerAnim !== "shoot") {
         player.use(sprite("player", { anim: "shoot" }));
         playerLayer = "full";
         playerAnim = "shoot";
       }
-      player.legs.hidden = true;
+      player.legs.hidden = false;
+      const desiredLegsAnim = player.isGrounded() && player.vel.x !== 0 ? "run" : "stand";
+      if (player.legs.getCurAnim()?.name !== desiredLegsAnim) player.legs.play(desiredLegsAnim);
     } else if (player.isGrounded()) {
       if (playerLayer !== "torso") {
         player.use(sprite("player-torso"));
