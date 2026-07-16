@@ -5,17 +5,21 @@
 // Player sheet is a uniform 8x8 grid of 45x45 frames (see main.js's
 // loadSprite call). Frame index = row*8 + col. Row 0 col 0 is a clean
 // standing pose (its upper portion is cropped into assets/player-torso.png
-// — see below), row 3 col 6 has the gun raised overhead with a muzzle
-// flash (used as the "jump" pose, rendered from this full sheet exactly as
-// before), and row 7 cols 0-4 (frames 56-60) are a previously-unused
-// fall-and-collapse sequence — falling backward mid-air, arcing down,
-// sprawled, then prone — played on a fatal hit (see main.js's
-// handlePlayerHit()/finishGameOver()). This table only covers root-object
-// states now — grounded movement is driven by the separate legs child, not
-// by animating this sheet (see LEGS_ANIMS/createPlayer()).
+// — see below). Row 3 cols 4-5 (frames 28-29) are a crouched, gun-forward
+// pose with a horizontal muzzle flash — the "shoot" anim, used whenever
+// shootPoseMs is active in main.js, grounded or airborne. There is no
+// dedicated mid-air pose anywhere in this sheet (every other full-body
+// pose reads as standing/crouched-on-ground), so airborne-and-not-shooting
+// just reuses "idle" rather than a mislabeled pose. Row 7 cols 0-4 (frames
+// 56-60) are a previously-unused fall-and-collapse sequence — falling
+// backward mid-air, arcing down, sprawled, then prone — played on a fatal
+// hit (see main.js's handlePlayerHit()/finishGameOver()). This table only
+// covers root-object states now — grounded movement is driven by the
+// separate legs child, not by animating this sheet (see
+// LEGS_ANIMS/createPlayer()).
 export const PLAYER_ANIMS = {
   idle: { from: 0, to: 0 },
-  jump: { from: 30, to: 30 },
+  shoot: { from: 28, to: 29, loop: true, speed: 8 },
   death: { from: 56, to: 60, loop: false, speed: 8 },
 };
 
@@ -244,4 +248,78 @@ export function createBullet(owner, x, y, dir) {
     isPlayerBullet ? "bullet-player" : "bullet-enemy",
     { dir, ownerTag: owner },
   ]);
+}
+
+const FRAGMENT_LIFE_MS = 500;
+
+// Enemy death "shatter" effect — see defeatEnemy() in main.js. Spawns 4
+// fragments cut from the enemy's own sprite (enemy-<type>-fragment-0..3.png,
+// see dev/generate-enemy-fragments.sh), each flying outward under a manual
+// gravity/velocity and fading out, then destroy()ing itself. Tagged
+// "death-fx", never "enemy" — resetRound()'s enemy-revival loop must never
+// touch these. Plain runtime objects, same "safe to destroy()" category as
+// bullets above — never touched by addLevel(), so never subject to the
+// "don't destroy() level entities" constraint noted in main.js's
+// resetRound().
+export function spawnEnemyFragments(enemy, config) {
+  const halfW = config.width / 2;
+  const halfH = config.height / 2;
+  const offsets = [
+    [0, 0],
+    [halfW, 0],
+    [0, halfH],
+    [halfW, halfH],
+  ];
+  offsets.forEach(([ox, oy], i) => {
+    const dirSign = ox === 0 ? -1 : 1;
+    const frag = add([
+      sprite(`enemy-${enemy.enemyType}-fragment-${i}`),
+      pos(enemy.pos.x + ox, enemy.pos.y + oy),
+      opacity(1),
+      rotate(rand(-30, 30)),
+      z(6),
+      "death-fx",
+      {
+        fragVel: vec2(dirSign * rand(60, 140), rand(-220, -100)),
+        fragAngVel: rand(-360, 360),
+        lifeMs: FRAGMENT_LIFE_MS,
+      },
+    ]);
+    frag.onUpdate(() => {
+      const dtSec = dt();
+      frag.fragVel.y += 900 * dtSec;
+      frag.pos.x += frag.fragVel.x * dtSec;
+      frag.pos.y += frag.fragVel.y * dtSec;
+      frag.rotateBy(frag.fragAngVel * dtSec);
+      frag.lifeMs -= dtSec * 1000;
+      frag.opacity = Math.max(0, frag.lifeMs / FRAGMENT_LIFE_MS);
+      if (frag.lifeMs <= 0) destroy(frag);
+    });
+  });
+}
+
+// Small spark/debris burst layered on top of the fragments above, using
+// Kaplay's built-in particles() component (previously unused anywhere in
+// this game). One-shot: emit() fires the whole burst immediately (eopt's
+// rate is 0, so there's no ongoing trickle), then the effect object
+// destroy()s itself once the emitter's own lifetime elapses.
+export function spawnEnemyDeathSpark(x, y) {
+  const fx = add([
+    pos(x, y),
+    particles(
+      {
+        max: 16,
+        speed: [80, 220],
+        angle: [0, 360],
+        lifeTime: [0.2, 0.4],
+        colors: [rgb(255, 210, 90), rgb(255, 120, 60)],
+        opacities: [1, 0],
+      },
+      { lifetime: 0.45, rate: 0, direction: 0, spread: 180 },
+    ),
+    z(7),
+    "death-fx",
+  ]);
+  fx.emit(16);
+  fx.onEnd(() => destroy(fx));
 }

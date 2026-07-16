@@ -10,6 +10,8 @@ import {
   createPlayer,
   createEnemy,
   createBullet,
+  spawnEnemyFragments,
+  spawnEnemyDeathSpark,
 } from "./entities.js";
 import { createCollectible, createGoal, createPole, POLE_HEIGHT } from "./collectibles.js";
 import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
@@ -27,7 +29,16 @@ const POWER_DURATION_MS = 8000;
 const HIT_INVINCIBLE_MS = 1400;
 const HIT_STUN_MS = 220;
 const SHOOT_COOLDOWN_MS = 260;
+// How long the "shoot" pose (PLAYER_ANIMS.shoot, frames 28-29) holds after
+// a shot is fired, independent of the fire-rate cooldown above — keeps the
+// pose visibly readable for a single tap instead of flashing one frame.
+const SHOOT_POSE_MS = 240;
 const CLIMB_SPEED = 210;
+// Camera shake pulse per enemy kill (see defeatEnemy()). Kaplay's shake()
+// is additive to cam.shake, not clamped/replaced, so this stays well below
+// the Perfect Run flourish's shake(12) to avoid compounding unpleasantly
+// during a fast combo chain.
+const DEATH_SHAKE_MAGNITUDE = 4;
 const FALL_DEATH_Y = LEVEL_HEIGHT + 200;
 
 // End-of-run bonus tuning (winRound()) — rewards a clean, fast run on top
@@ -142,8 +153,13 @@ function init() {
   loadSprite("player", `${ASSET_BASE}player.png`, { sliceX: 8, sliceY: 8, anims: PLAYER_ANIMS });
   loadSprite("player-torso", `${ASSET_BASE}player-torso.png`);
   loadSprite("player-legs", `${ASSET_BASE}player-legs.png`, { sliceX: 4, sliceY: 1, anims: LEGS_ANIMS });
-  Object.values(ENEMY_CONFIGS).forEach((config) => {
+  Object.entries(ENEMY_CONFIGS).forEach(([type, config]) => {
     config.sprites.forEach((name) => loadSprite(name, `${ASSET_BASE}${name}.png`));
+    // Shatter-effect fragments (see entities.js's spawnEnemyFragments() and
+    // dev/generate-enemy-fragments.sh) — 4 mechanical crops per type.
+    for (let i = 0; i < 4; i++) {
+      loadSprite(`enemy-${type}-fragment-${i}`, `${ASSET_BASE}enemy-${type}-fragment-${i}.png`);
+    }
   });
   loadSprite("collectible-cash", `${ASSET_BASE}collectible-cash.png`);
   loadSprite("powerup-root-access", `${ASSET_BASE}powerup-root-access.png`);
@@ -193,6 +209,14 @@ function init() {
   // Tracked locally rather than queried off the sprite component each
   // frame so the .use() swap below only happens on an actual transition.
   let playerLayer = "full";
+  // Which anim is active while playerLayer === "full" — "idle" or "shoot".
+  // Needed alongside playerLayer because two different full-sheet anims can
+  // both apply there; playerLayer alone can't tell them apart, so a swap
+  // from one to the other wouldn't otherwise trigger a fresh .use() call.
+  let playerAnim = "idle";
+  // Counts down after a shoot press — see SHOOT_POSE_MS and onButtonPress
+  // "shoot" below. While > 0, the shoot pose overrides grounded/airborne.
+  let shootPoseMs = 0;
   // Non-null while the player is riding the bonus pole down to the goal —
   // see the "pole" collision handler and updateClimb() below.
   let climb = null;
@@ -333,6 +357,10 @@ function init() {
     get("bullet").forEach((bullet) => destroy(bullet));
   }
 
+  function clearDeathEffects() {
+    get("death-fx").forEach((fx) => destroy(fx));
+  }
+
   function resetRound() {
     // Never call destroyAll()/addLevel() again after the initial buildLevel()
     // — a second call silently wedges Kaplay's entire update loop (the HUD
@@ -351,10 +379,13 @@ function init() {
     deathAnimMs = 0;
     climb = null;
     hitStunMs = 0;
+    shootPoseMs = 0;
     playerLayer = "full";
+    playerAnim = "idle";
     player.use(sprite("player", { anim: "idle" }));
     player.legs.hidden = true;
     clearBullets();
+    clearDeathEffects();
     player.pos.x = playerSpawn.x;
     player.pos.y = playerSpawn.y;
     player.vel.x = 0;
@@ -610,7 +641,9 @@ function init() {
       // isn't frozen the instant state flips to LOSE.
       deathSourceLabel = sourceLabel;
       deathAnimMs = DEATH_ANIM_MS;
+      shootPoseMs = 0;
       playerLayer = "full";
+      playerAnim = "death";
       player.use(sprite("player", { anim: "death" }));
       player.legs.hidden = true;
       player.vel.x = 0;
@@ -640,6 +673,12 @@ function init() {
     // of remaining health, but a bullet only reaches here on the hit that
     // brings health to 0, so multi-hit enemies never over-reward chip damage.
     audio.playEnemyDefeated();
+    // Shatter/spark/shake feedback — spawned before the enemy is hidden and
+    // moved off-stage below, since the effect reads its current position.
+    const config = ENEMY_CONFIGS[enemy.enemyType];
+    spawnEnemyFragments(enemy, config);
+    spawnEnemyDeathSpark(enemy.pos.x + config.width / 2, enemy.pos.y + config.height / 2);
+    shake(DEATH_SHAKE_MAGNITUDE);
     enemy.defeated = true;
     enemy.hidden = true;
     enemy.paused = true;
@@ -821,6 +860,7 @@ function init() {
 
     state.tick(dt() * 1000);
     if (shootCooldownMs > 0) shootCooldownMs -= dt() * 1000;
+    if (shootPoseMs > 0) shootPoseMs -= dt() * 1000;
     if (hitStunMs > 0) hitStunMs -= dt() * 1000;
     if (comboTimerMs > 0) comboTimerMs -= dt() * 1000;
 
@@ -843,12 +883,23 @@ function init() {
         player.vel.x = 0;
       }
     }
-    // Grounded: swap the root object to the legs-less torso crop and let
-    // the separate legs child (see createPlayer()) carry the walk cycle.
-    // Airborne: swap back to the original full sheet's static jump frame,
-    // which already has its own baked-in legs, and hide the legs child so
-    // it doesn't double up.
-    if (player.isGrounded()) {
+    // Shoot pose wins regardless of grounded/airborne — it's a third pose
+    // bucket layered on top of the grounded/airborne split below. Grounded:
+    // swap the root object to the legs-less torso crop and let the
+    // separate legs child (see createPlayer()) carry the walk cycle.
+    // Airborne (and not shooting): the full sheet's idle pose, which
+    // already has its own baked-in legs — there's no dedicated mid-air
+    // pose in this sheet (see entities.js's PLAYER_ANIMS comment), so idle
+    // reads better than the old gun-raised pose did. Either full-sheet case
+    // hides the legs child so it doesn't double up.
+    if (shootPoseMs > 0) {
+      if (playerLayer !== "full" || playerAnim !== "shoot") {
+        player.use(sprite("player", { anim: "shoot" }));
+        playerLayer = "full";
+        playerAnim = "shoot";
+      }
+      player.legs.hidden = true;
+    } else if (player.isGrounded()) {
       if (playerLayer !== "torso") {
         player.use(sprite("player-torso"));
         playerLayer = "torso";
@@ -857,9 +908,10 @@ function init() {
       const desiredLegsAnim = player.vel.x !== 0 ? "run" : "stand";
       if (player.legs.getCurAnim()?.name !== desiredLegsAnim) player.legs.play(desiredLegsAnim);
     } else {
-      if (playerLayer !== "full") {
-        player.use(sprite("player", { anim: "jump" }));
+      if (playerLayer !== "full" || playerAnim !== "idle") {
+        player.use(sprite("player", { anim: "idle" }));
         playerLayer = "full";
+        playerAnim = "idle";
       }
       player.legs.hidden = true;
     }
@@ -896,8 +948,12 @@ function init() {
   onButtonPress("shoot", () => {
     if (!state.isPlaying || !player || climb || shootCooldownMs > 0) return;
     shootCooldownMs = SHOOT_COOLDOWN_MS;
+    shootPoseMs = SHOOT_POSE_MS;
     const dir = player.flipX ? -1 : 1;
-    createBullet("player", player.pos.x + (dir > 0 ? 42 : -12), player.pos.y + 16, dir);
+    // Offsets tuned against the "shoot" pose's (frames 28-29) muzzle-flash
+    // position, so the bullet appears to leave the gun in both facing
+    // directions, grounded or airborne.
+    createBullet("player", player.pos.x + (dir > 0 ? 40 : 5), player.pos.y + 24, dir);
     audio.playShoot();
     state.shotsFired += 1;
   });

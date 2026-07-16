@@ -95,7 +95,9 @@ vendored from):
   machine that generated them — not hand-drawn). `collectible-cash.png`/`collectible-redundancy.png`
   are hand-drawn flat icons, not part of that AI-generated batch. `player-torso.png`/
   `player-legs.png` are derived crops of the existing `player.png` sheet (see entities.js's
-  comments), not new art.
+  comments), not new art. Likewise `enemy-<type>-fragment-0..3.png` are mechanical 2x2-grid crops
+  of each enemy's existing `-1.png` idle frame (see `dev/generate-enemy-fragments.sh`), used for
+  the death "shatter" effect in `entities.js`'s `spawnEnemyFragments()` — not new art either.
 
 **Extending it:** new enemy type → add a config entry to `ENEMY_CONFIGS` in `entities.js` (and a new
 tile symbol in `level.js`). Bigger/different level → edit `level.js`'s ASCII map; keep every gap
