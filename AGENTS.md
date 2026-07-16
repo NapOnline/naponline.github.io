@@ -87,14 +87,15 @@ vendored from):
   More" by greatdocbrown (the commit coin + Root Access key). CC0 means no attribution is legally
   required, but don't add sprites from anywhere else without checking the license first — a public
   repo commits raw asset files as plain files, which some "free" licenses (e.g. CraftPix's)
-  explicitly forbid redistributing. The `bug`/`latency-spike`/`failed-pipeline` enemy sprites (the
-  pack above only ever supplied one reused soldier character for these, tinted per type) were
-  replaced with original AI-generated pixel art — see the git history around that change for the
-  generation pipeline (SDXL via a local ComfyUI, background-removed and pixelated with a small
-  Python script, not hand-drawn). `outage`'s turret sprites remain hand-drawn originals, unchanged.
-  `collectible-redundancy.png` is a hand-drawn flat icon in the same style as the cash/key icons,
-  not part of that AI-generated batch. `player-torso.png`/`player-legs.png` are derived crops of
-  the existing `player.png` sheet (see entities.js's comments), not new art.
+  explicitly forbid redistributing. All four enemy sprites (`bug`/`latency-spike`/`failed-pipeline`,
+  originally one reused soldier character tinted per type, and `outage`, originally a hand-drawn
+  screen/monitor design) were replaced with original AI-generated pixel art — see the git history
+  around those changes for the generation pipeline (SDXL via a local ComfyUI, background-removed
+  and pixelated with a small Python script — `~/comfy-projects/devops-platformer-enemies/` on the
+  machine that generated them — not hand-drawn). `collectible-cash.png`/`collectible-redundancy.png`
+  are hand-drawn flat icons, not part of that AI-generated batch. `player-torso.png`/
+  `player-legs.png` are derived crops of the existing `player.png` sheet (see entities.js's
+  comments), not new art.
 
 **Extending it:** new enemy type → add a config entry to `ENEMY_CONFIGS` in `entities.js` (and a new
 tile symbol in `level.js`). Bigger/different level → edit `level.js`'s ASCII map; keep every gap

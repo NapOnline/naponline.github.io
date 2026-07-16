@@ -56,6 +56,7 @@ export const ENEMY_CONFIGS = {
     width: 32,
     height: 44,
     hitbox: { offset: [0, 9], width: 32, height: 34 },
+    health: 1,
     behavior: "patrol",
   },
   "latency-spike": {
@@ -66,6 +67,7 @@ export const ENEMY_CONFIGS = {
     width: 34,
     height: 44,
     hitbox: { offset: [0, 7], width: 33, height: 37 },
+    health: 2,
     behavior: "burst",
   },
   "failed-pipeline": {
@@ -76,6 +78,7 @@ export const ENEMY_CONFIGS = {
     width: 58,
     height: 44,
     hitbox: { offset: [8, 1], width: 42, height: 43 },
+    health: 3,
     behavior: "erratic",
   },
   outage: {
@@ -85,7 +88,8 @@ export const ENEMY_CONFIGS = {
     speed: 0,
     width: 34,
     height: 40,
-    hitbox: { offset: [4, 0], width: 30, height: 40 },
+    hitbox: { offset: [1, 0], width: 32, height: 40 },
+    health: 2,
     behavior: "turret",
     shootIntervalSec: 2.2,
   },
@@ -134,6 +138,7 @@ export function createEnemy(type, x, y) {
     area({ shape: new Rect(vec2(...config.hitbox.offset), config.hitbox.width, config.hitbox.height) }),
     body(),
     color(config.tint[0], config.tint[1], config.tint[2]),
+    opacity(1),
     "enemy",
     {
       enemyType: type,
@@ -149,6 +154,12 @@ export function createEnemy(type, x, y) {
       burstTimer: 0.6,
       shootTimer: config.shootIntervalSec ?? Infinity,
       readyToFire: false,
+      // Bullets chip this down by 1 (see main.js's bullet-enemy collision
+      // handler); a stomp or Root-Access touch bypasses it entirely and
+      // defeats in one hit regardless. hitFlashMs drives a brief opacity
+      // blink on a non-lethal hit — see updateEnemy()'s decay below.
+      health: config.health,
+      hitFlashMs: 0,
     },
   ]);
 
@@ -168,8 +179,18 @@ function swapFrame(enemy, config, deltaTime) {
   }
 }
 
+// Duration of the blink triggered by a non-lethal bullet hit (see
+// main.js's bullet-enemy collision handler, which sets enemy.hitFlashMs).
+export const ENEMY_HIT_FLASH_MS = 220;
+
 function updateEnemy(enemy, config) {
   const deltaTime = dt();
+
+  if (enemy.hitFlashMs > 0) {
+    enemy.hitFlashMs -= deltaTime * 1000;
+    enemy.opacity = enemy.hitFlashMs > 0 && Math.floor(enemy.hitFlashMs / 40) % 2 === 0 ? 0.35 : 1;
+  }
+
   let speed = config.speed;
 
   if (config.behavior === "turret") {

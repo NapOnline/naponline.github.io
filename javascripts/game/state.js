@@ -17,10 +17,20 @@ export class GameState {
     this.redundancy = MAX_REDUNDANCY;
     this.powerTimer = 0;
     this.hitTimer = 0;
+    // Tracked for the end-of-run bonus breakdown in main.js's winRound() —
+    // whether this run ever touched Root Access or the redundancy-restore
+    // pickup (a clean run scores more for needing neither), and how long
+    // the run has taken so far (a faster run scores more).
+    this.usedPower = false;
+    this.usedHeal = false;
+    this.elapsedMs = 0;
   }
 
   start() {
     this.state = STATES.PLAYING;
+    this.usedPower = false;
+    this.usedHeal = false;
+    this.elapsedMs = 0;
   }
 
   addScore(points) {
@@ -29,6 +39,7 @@ export class GameState {
 
   activatePower(durationMs) {
     this.powerTimer = durationMs;
+    this.usedPower = true;
   }
 
   triggerHitInvincibility(durationMs) {
@@ -37,9 +48,11 @@ export class GameState {
 
   restoreRedundancy(amount = 1) {
     this.redundancy = Math.min(MAX_REDUNDANCY, this.redundancy + amount);
+    this.usedHeal = true;
   }
 
   tick(dtMs) {
+    this.elapsedMs += dtMs;
     if (this.powerTimer > 0) this.powerTimer = Math.max(0, this.powerTimer - dtMs);
     if (this.hitTimer > 0) this.hitTimer = Math.max(0, this.hitTimer - dtMs);
   }

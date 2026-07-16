@@ -5,6 +5,7 @@ import {
   LEGS_ANIMS,
   PLAYER_HEIGHT,
   ENEMY_CONFIGS,
+  ENEMY_HIT_FLASH_MS,
   BULLET_SPEED,
   createPlayer,
   createEnemy,
@@ -27,6 +28,14 @@ const HIT_STUN_MS = 220;
 const SHOOT_COOLDOWN_MS = 260;
 const CLIMB_SPEED = 210;
 const FALL_DEATH_Y = LEVEL_HEIGHT + 200;
+
+// End-of-run bonus tuning (winRound()) — rewards a clean, fast run on top
+// of the existing Full Deploy/pole-climb bonuses.
+const REDUNDANCY_BONUS_PER_NODE = 100;
+const NO_POWER_BONUS = 250;
+const NO_HEAL_BONUS = 250;
+const SPEED_BONUS_MAX = 1000;
+const SPEED_BONUS_DECAY_PER_SEC = 8;
 
 const ENEMY_SYMBOLS = { b: "bug", l: "latency-spike", p: "failed-pipeline", o: "outage" };
 
@@ -67,6 +76,7 @@ function init() {
   const powerTimerEl = document.getElementById("game-power-timer");
   const overlayEl = document.getElementById("game-overlay");
   const messageEl = document.getElementById("game-message");
+  const bonusesEl = document.getElementById("game-bonuses");
   const highscoresEl = document.getElementById("game-highscores");
   const startBtn = document.getElementById("game-start");
   const muteBtn = document.getElementById("game-mute");
@@ -285,6 +295,9 @@ function init() {
       enemy.dir = 1;
       enemy.shootTimer = ENEMY_CONFIGS[enemy.enemyType].shootIntervalSec ?? Infinity;
       enemy.readyToFire = false;
+      enemy.health = ENEMY_CONFIGS[enemy.enemyType].health;
+      enemy.hitFlashMs = 0;
+      enemy.opacity = 1;
     });
     get("collectible").forEach((item) => {
       item.hidden = false;
@@ -309,10 +322,22 @@ function init() {
     highscoresEl.innerHTML = list.map((entry) => `<li>${entry.score}</li>`).join("");
   }
 
-  function showOverlay(message, buttonLabel) {
+  function renderBonuses(lines) {
+    if (!bonusesEl) return;
+    if (!lines || lines.length === 0) {
+      bonusesEl.hidden = true;
+      bonusesEl.innerHTML = "";
+      return;
+    }
+    bonusesEl.hidden = false;
+    bonusesEl.innerHTML = lines.map((line) => `<li>${line}</li>`).join("");
+  }
+
+  function showOverlay(message, buttonLabel, bonusLines) {
     overlayEl.hidden = false;
     messageEl.textContent = message;
     startBtn.textContent = buttonLabel;
+    renderBonuses(bonusLines);
     renderHighScores();
   }
 
@@ -340,6 +365,19 @@ function init() {
   }
 
   startBtn.addEventListener("click", startGame);
+
+  // Keyboard alternative to clicking Start/Try Again/Play Again. Listens on
+  // the document (not Kaplay's own button system, which only reads input
+  // relative to the focused canvas and is gated behind state.isPlaying
+  // anyway) so it works the instant the overlay appears, before the canvas
+  // has focus.
+  document.addEventListener("keydown", (e) => {
+    if (overlayEl.hidden) return;
+    if (e.code === "Enter" || e.code === "NumpadEnter" || e.code === "Space") {
+      e.preventDefault();
+      startGame();
+    }
+  });
 
   function syncMuteBtn() {
     if (!muteBtn) return;
@@ -421,34 +459,64 @@ function init() {
     }
   }
 
-  function defeatEnemy(enemy) {
+  function defeatEnemy(enemy, scoreValue) {
     // Never destroy() — see the comment in resetRound(). Hiding + pausing +
     // moving far away is functionally equivalent (invisible, inert, can't
     // collide) without ever touching the object graph after initial build.
+    // Score is granted here, on the actual kill, rather than at each call
+    // site — a stomp/Root-Access touch is always an instant kill regardless
+    // of remaining health, but a bullet only reaches here on the hit that
+    // brings health to 0, so multi-hit enemies never over-reward chip damage.
     audio.playEnemyDefeated();
     enemy.defeated = true;
     enemy.hidden = true;
     enemy.paused = true;
     enemy.pos.x = -9999;
+    state.addScore(scoreValue);
   }
 
   function winRound(bonus, bonusLabel) {
     if (state.isOver) return;
     let total = bonus;
-    const parts = ["Deployed to production!"];
-    if (bonusLabel) parts.push(bonusLabel);
+    const bonusLines = [];
+    if (bonusLabel) bonusLines.push(bonusLabel);
     if (totalCollectibles > 0 && collectedCount >= totalCollectibles) {
       total += 300;
-      parts.push("Full Deploy bonus +300!");
+      bonusLines.push("Full Deploy bonus +300!");
+    }
+    // Clean-run bonuses — reward finishing with redundancy to spare, never
+    // touching Root Access, never needing the heal pickup, and finishing
+    // quickly, on top of the completion bonuses above. Each is skipped
+    // entirely (no line, no score) when it comes out to 0.
+    const redundancyBonus = state.redundancy * REDUNDANCY_BONUS_PER_NODE;
+    if (redundancyBonus > 0) {
+      total += redundancyBonus;
+      const nodeWord = state.redundancy === 1 ? "node" : "nodes";
+      bonusLines.push(`Redundancy bonus +${redundancyBonus}! (${state.redundancy} ${nodeWord} left)`);
+    }
+    if (!state.usedPower) {
+      total += NO_POWER_BONUS;
+      bonusLines.push(`No Root Access needed +${NO_POWER_BONUS}!`);
+    }
+    if (!state.usedHeal) {
+      total += NO_HEAL_BONUS;
+      bonusLines.push(`Self-healing-free +${NO_HEAL_BONUS}!`);
+    }
+    const elapsedSeconds = state.elapsedMs / 1000;
+    const speedBonus = Math.max(0, Math.round(SPEED_BONUS_MAX - elapsedSeconds * SPEED_BONUS_DECAY_PER_SEC));
+    if (speedBonus > 0) {
+      total += speedBonus;
+      bonusLines.push(`Speed bonus +${speedBonus}!`);
     }
     if (total > 0) state.addScore(total);
     state.win();
     audio.playWin();
     const { rank } = submitHighScore(state.score);
     if (bestEl) bestEl.textContent = getTopScore();
-    if (rank === 1) parts.push("New best!");
-    else if (rank) parts.push("High score!");
-    showOverlay(parts.join(" "), "Play Again");
+    let message = "Deployed to production!";
+    if (rank === 1) message += " New best!";
+    else if (rank) message += " High score!";
+    showOverlay(message, "Play Again", bonusLines);
   }
 
   function updateClimb() {
@@ -566,13 +634,11 @@ function init() {
     if (!state.isPlaying || enemy.defeated || climb) return;
     if (state.isHitInvincible) return;
     if (state.isPowered) {
-      defeatEnemy(enemy);
-      state.addScore(200);
+      defeatEnemy(enemy, 200);
       return;
     }
     if (col && col.isBottom()) {
-      defeatEnemy(enemy);
-      state.addScore(200);
+      defeatEnemy(enemy, 200);
       playerObj.jump(JUMP_FORCE / 2);
     } else {
       handlePlayerHit(enemy.label, { knockbackDir: playerObj.pos.x < enemy.pos.x ? -1 : 1 });
@@ -582,8 +648,12 @@ function init() {
   onCollide("bullet-player", "enemy", (bullet, enemy) => {
     destroy(bullet);
     if (!state.isPlaying || enemy.defeated || state.isHitInvincible) return;
-    defeatEnemy(enemy);
-    state.addScore(150);
+    enemy.health -= 1;
+    if (enemy.health <= 0) {
+      defeatEnemy(enemy, 150);
+    } else {
+      enemy.hitFlashMs = ENEMY_HIT_FLASH_MS;
+    }
   });
 
   onCollide("bullet-player", "ground", (bullet) => destroy(bullet));
