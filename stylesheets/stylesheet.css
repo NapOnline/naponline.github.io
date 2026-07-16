@@ -365,7 +365,17 @@ main.container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Plain "center" centers overflow symmetrically when the overlay's
+     content (message + stats + bonuses + highscores) is taller than the
+     canvas frame — common on short mobile viewports — which pushes the
+     Start/Try Again button (the first child) above the box's own visible
+     top edge with no way to scroll to it, since scrollTop can't go
+     negative. "safe center" falls back to start-alignment instead of
+     letting that happen; the plain "center" above it is a fallback for
+     browsers that don't understand "safe" (an unsupported value in the
+     second declaration is ignored, leaving the first in effect). */
   justify-content: center;
+  justify-content: safe center;
   gap: 12px;
   background: rgba(18, 16, 19, 0.85);
   text-align: center;
