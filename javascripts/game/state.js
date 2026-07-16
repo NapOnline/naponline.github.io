@@ -35,6 +35,10 @@ export class GameState {
     this.hitTimer = durationMs;
   }
 
+  restoreRedundancy(amount = 1) {
+    this.redundancy = Math.min(MAX_REDUNDANCY, this.redundancy + amount);
+  }
+
   tick(dtMs) {
     if (this.powerTimer > 0) this.powerTimer = Math.max(0, this.powerTimer - dtMs);
     if (this.hitTimer > 0) this.hitTimer = Math.max(0, this.hitTimer - dtMs);

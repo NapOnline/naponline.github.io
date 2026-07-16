@@ -197,6 +197,14 @@ main.container {
   gap: 0.5em;
 }
 
+/* The [hidden] attribute's UA-stylesheet display:none loses to the
+   .hud-item rule above (author CSS always beats UA CSS at equal
+   specificity) — without this, a hidden .hud-item (e.g. ROOT ACCESS
+   between power-ups) stays visibly flexed. */
+.hud-item[hidden] {
+  display: none;
+}
+
 .hud-item strong {
   color: var(--red-accent);
 }
@@ -229,6 +237,21 @@ main.container {
   background: transparent;
   border-color: var(--red-accent-dim);
   box-shadow: none;
+}
+
+.game-mute-btn {
+  background: none;
+  border: 1px solid var(--red-accent-dim);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.game-mute-btn:hover {
+  border-color: var(--red-accent);
 }
 
 .game-canvas-frame {
@@ -285,6 +308,28 @@ main.container {
   margin: 0;
   color: var(--text-muted);
   max-width: 32ch;
+}
+
+.game-highscores {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: highscore;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.game-highscores[hidden] {
+  display: none;
+}
+
+.game-highscores li {
+  counter-increment: highscore;
+}
+
+.game-highscores li::before {
+  content: counter(highscore) ". ";
+  color: var(--red-accent-dim);
 }
 
 .game-touch-controls {

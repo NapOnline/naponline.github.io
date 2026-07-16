@@ -7,6 +7,7 @@
   <div class="game-wrap">
     <div class="game-hud">
       <span class="hud-item">Score <strong id="game-score">0</strong></span>
+      <span class="hud-item">Best <strong id="game-best">0</strong></span>
       <span class="hud-item hud-item--redundancy">
         REDUNDANCY
         <span class="redundancy-bar" id="game-redundancy">
@@ -16,6 +17,7 @@
         </span>
       </span>
       <span class="hud-item hud-item--power" id="game-power" hidden>ROOT ACCESS <strong id="game-power-timer"></strong></span>
+      <button type="button" class="game-mute-btn" id="game-mute" aria-pressed="false" aria-label="Mute sound">&#128266;</button>
     </div>
 
     <div class="game-canvas-frame">
@@ -24,6 +26,7 @@
       <div class="game-overlay" id="game-overlay">
         <button type="button" class="btn btn-primary" id="game-start">Start Game</button>
         <p class="game-overlay__msg" id="game-message"></p>
+        <ol class="game-highscores" id="game-highscores" hidden></ol>
       </div>
     </div>
 
@@ -35,7 +38,7 @@
       </div>
       <button type="button" class="touch-btn touch-btn--jump" data-action="jump" aria-label="Jump">JUMP</button>
     </div>
-    <p class="game-hint">Arrow keys / WASD to move, Space to jump, X to fire &mdash; on touch devices, use the pad above.</p>
+    <p class="game-hint">Arrow keys / WASD to move, Space to jump, E to fire &mdash; on touch devices, use the pad above.</p>
   </div>
 
   <script type="module" src="{{ '/javascripts/game/main.js' | relative_url }}"></script>

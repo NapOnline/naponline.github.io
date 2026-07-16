@@ -2,11 +2,14 @@
 // globals (see entities.js's note on `global: true`).
 import { TILE_SIZE } from "./level.js";
 
+const COLLECTIBLE_SPRITES = {
+  "root-access": { sprite: "powerup-root-access", width: 30, height: 16 },
+  cash: { sprite: "collectible-cash", width: 28, height: 20 },
+  redundancy: { sprite: "collectible-redundancy", width: 24, height: 24 },
+};
+
 export function createCollectible(type, x, y) {
-  const isKey = type === "root-access";
-  const spriteName = isKey ? "powerup-root-access" : "collectible-cash";
-  const width = isKey ? 30 : 28;
-  const height = isKey ? 16 : 20;
+  const { sprite: spriteName, width, height } = COLLECTIBLE_SPRITES[type];
   return add([
     sprite(spriteName, { width, height }),
     pos(x, y),

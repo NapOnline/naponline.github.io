@@ -4,44 +4,78 @@
 
 // Player sheet is a uniform 8x8 grid of 45x45 frames (see main.js's
 // loadSprite call). Frame index = row*8 + col. Row 0 col 0 is a clean
-// standing pose, row 1 col 0 a crouched-forward pose (used as the second
-// "run" frame — a bob, not a true walk cycle, given the sheet's actual
-// poses), row 3 col 6 has the gun raised overhead with a muzzle flash
-// (used as the "jump" pose).
+// standing pose (its upper portion is cropped into assets/player-torso.png
+// — see below), row 3 col 6 has the gun raised overhead with a muzzle
+// flash (used as the "jump" pose, rendered from this full sheet exactly as
+// before). This table only covers those two root-object states now —
+// grounded movement is driven by the separate legs child, not by animating
+// this sheet (see LEGS_ANIMS/createPlayer()).
 export const PLAYER_ANIMS = {
   idle: { from: 0, to: 0 },
-  run: { frames: [0, 8], loop: true, speed: 6 },
   jump: { from: 30, to: 30 },
 };
 
+// Frames 18-27 of the sheet above are standalone legs-only art (no
+// torso/head) — a real stride cycle meant to be layered under a
+// mostly-static torso, unlike the two full-body poses the old single-layer
+// "run" anim used to flash between. assets/player-legs.png is a 4-frame
+// strip cropped from a curated subset of those (frame order: contact-wide,
+// stride-a, contact-narrow, stride-b) — not a biomechanically matched
+// cycle (the source art wasn't drawn as one set), but enough to read as an
+// actual walk instead of a flicker.
+export const LEGS_ANIMS = {
+  stand: { from: 0, to: 0 },
+  run: { frames: [0, 1, 2, 3], loop: true, speed: 8 },
+};
+
+// The original full sheet's cell height. Used anywhere sizing needs to
+// stay pinned to the "full body" silhouette (e.g. the bonus-pole climb in
+// main.js) regardless of which sprite layer the root player object
+// currently has active — the live .height of a swapped-in player-torso
+// sprite is much shorter and would otherwise throw that math off.
+export const PLAYER_HEIGHT = 45;
+
 export const PATROL_RADIUS = 96;
 
+// Each enemy's hitbox is a fixed rect (offset + size, local to the sprite's
+// topleft) sized to the visible silhouette shared by both its anim frames —
+// not the full sprite canvas, which for these has a few px of transparent
+// margin on each side (see the bbox each sprite was cropped/padded to when
+// generated). A static shape can't track exact per-frame bounds as a pose
+// shifts slightly between frames; this trades that precision for "hits feel
+// like they're landing on the character," matching the player's hitbox in
+// createPlayer() below.
 export const ENEMY_CONFIGS = {
   bug: {
+    // Original art (see AGENTS.md/plan notes) — fully self-colored, no
+    // runtime tint needed. Native render size, no upscale.
     label: "Bug",
     sprites: ["enemy-bug-1", "enemy-bug-2"],
-    tint: [110, 210, 130],
+    tint: [255, 255, 255],
     speed: 55,
     width: 32,
     height: 44,
+    hitbox: { offset: [0, 9], width: 32, height: 34 },
     behavior: "patrol",
   },
   "latency-spike": {
     label: "Latency Spike",
     sprites: ["enemy-latency-spike-1", "enemy-latency-spike-2"],
-    tint: [255, 157, 45],
+    tint: [255, 255, 255],
     speed: 150,
     width: 34,
     height: 44,
+    hitbox: { offset: [0, 7], width: 33, height: 37 },
     behavior: "burst",
   },
   "failed-pipeline": {
     label: "Failed Pipeline",
     sprites: ["enemy-failed-pipeline-1", "enemy-failed-pipeline-2"],
-    tint: [180, 40, 55],
+    tint: [255, 255, 255],
     speed: 65,
-    width: 60,
+    width: 58,
     height: 44,
+    hitbox: { offset: [8, 1], width: 42, height: 43 },
     behavior: "erratic",
   },
   outage: {
@@ -51,6 +85,7 @@ export const ENEMY_CONFIGS = {
     speed: 0,
     width: 34,
     height: 40,
+    hitbox: { offset: [4, 0], width: 30, height: 40 },
     behavior: "turret",
     shootIntervalSec: 2.2,
   },
@@ -58,15 +93,37 @@ export const ENEMY_CONFIGS = {
 
 const ANIM_SWAP_SEC = 0.26;
 
+// A bare area() defaults to the active sprite's full render rect — for the
+// player that's the whole 45x45 cell, which is roughly twice the width and
+// height of the actual character silhouette (idle bbox is ~x15-35,y15-45;
+// the jump pose is narrower still). This fixed rect is sized to cover both
+// the grounded torso+legs silhouette and the airborne jump-frame silhouette
+// reasonably well without swapping shape per state (same static-rect
+// tradeoff as the enemy hitboxes in ENEMY_CONFIGS above).
+const PLAYER_HITBOX = { offset: [13, 8], width: 20, height: 34 };
+
 export function createPlayer(x, y) {
-  return add([
+  const player = add([
     sprite("player", { anim: "idle" }),
     pos(x, y),
-    area(),
+    area({ shape: new Rect(vec2(...PLAYER_HITBOX.offset), PLAYER_HITBOX.width, PLAYER_HITBOX.height) }),
     body(),
     opacity(1),
     "player",
   ]);
+  // Legs are a child (parent-relative pos, never destroyed — only ever
+  // shown/hidden, same "never destroy/recreate post-addLevel()" rule as
+  // everything else). Hidden by default: the root object starts on the
+  // full "player" sheet (its own baked-in legs already visible), and only
+  // swaps to the legs-less player-torso sprite once grounded movement
+  // starts driving it — see main.js's onUpdate.
+  // y:26 matches the source crop offset used to build player-legs.png (see
+  // its generation note) — the torso crop stops at y:30 of the original
+  // 45x45 frame, the legs strip starts at y:26 of the same frame, and this
+  // local offset reproduces that alignment under the parent's topleft anchor.
+  player.legs = player.add([sprite("player-legs", { anim: "stand" }), pos(0, 26), opacity(1), "player-legs"]);
+  player.legs.hidden = true;
+  return player;
 }
 
 export function createEnemy(type, x, y) {
@@ -74,7 +131,7 @@ export function createEnemy(type, x, y) {
   const enemy = add([
     sprite(config.sprites[0], { width: config.width, height: config.height }),
     pos(x, y),
-    area(),
+    area({ shape: new Rect(vec2(...config.hitbox.offset), config.hitbox.width, config.hitbox.height) }),
     body(),
     color(config.tint[0], config.tint[1], config.tint[2]),
     "enemy",

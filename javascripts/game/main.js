@@ -1,9 +1,20 @@
 import kaplay from "../vendor/kaplay.mjs";
 import { LEVEL_MAP, LEVEL_WIDTH, LEVEL_HEIGHT, TILE_SIZE } from "./level.js";
-import { PLAYER_ANIMS, ENEMY_CONFIGS, BULLET_SPEED, createPlayer, createEnemy, createBullet } from "./entities.js";
+import {
+  PLAYER_ANIMS,
+  LEGS_ANIMS,
+  PLAYER_HEIGHT,
+  ENEMY_CONFIGS,
+  BULLET_SPEED,
+  createPlayer,
+  createEnemy,
+  createBullet,
+} from "./entities.js";
 import { createCollectible, createGoal, createPole, POLE_HEIGHT } from "./collectibles.js";
 import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
 import { setupTouchControls } from "./input.js";
+import { loadHighScores, submitHighScore, getTopScore } from "./highscores.js";
+import * as audio from "./audio.js";
 
 const VIEW_W = 480;
 const VIEW_H = 240;
@@ -12,6 +23,7 @@ const JUMP_FORCE = 820;
 const MOVE_SPEED = 200;
 const POWER_DURATION_MS = 8000;
 const HIT_INVINCIBLE_MS = 1400;
+const HIT_STUN_MS = 220;
 const SHOOT_COOLDOWN_MS = 260;
 const CLIMB_SPEED = 210;
 const FALL_DEATH_Y = LEVEL_HEIGHT + 200;
@@ -48,13 +60,16 @@ function init() {
   window.addEventListener("orientationchange", () => setTimeout(layoutCanvas, 60));
 
   const scoreEl = document.getElementById("game-score");
+  const bestEl = document.getElementById("game-best");
   const redundancyEl = document.getElementById("game-redundancy");
   const redundancyNodes = redundancyEl ? Array.from(redundancyEl.querySelectorAll("[data-node]")) : [];
   const powerEl = document.getElementById("game-power");
   const powerTimerEl = document.getElementById("game-power-timer");
   const overlayEl = document.getElementById("game-overlay");
   const messageEl = document.getElementById("game-message");
+  const highscoresEl = document.getElementById("game-highscores");
   const startBtn = document.getElementById("game-start");
+  const muteBtn = document.getElementById("game-mute");
   const touchControls = document.getElementById("game-touch-controls");
   const hitFlashEl = document.getElementById("game-hit-flash");
 
@@ -69,7 +84,7 @@ function init() {
       left: { keyboard: ["left", "a"] },
       right: { keyboard: ["right", "d"] },
       jump: { keyboard: ["space", "up", "w"] },
-      shoot: { keyboard: ["x", "j", "control"] },
+      shoot: { keyboard: ["e", "j", "control"] },
     },
   });
 
@@ -87,11 +102,14 @@ function init() {
   canvas.style.height = "100%";
 
   loadSprite("player", `${ASSET_BASE}player.png`, { sliceX: 8, sliceY: 8, anims: PLAYER_ANIMS });
+  loadSprite("player-torso", `${ASSET_BASE}player-torso.png`);
+  loadSprite("player-legs", `${ASSET_BASE}player-legs.png`, { sliceX: 4, sliceY: 1, anims: LEGS_ANIMS });
   Object.values(ENEMY_CONFIGS).forEach((config) => {
     config.sprites.forEach((name) => loadSprite(name, `${ASSET_BASE}${name}.png`));
   });
   loadSprite("collectible-cash", `${ASSET_BASE}collectible-cash.png`);
   loadSprite("powerup-root-access", `${ASSET_BASE}powerup-root-access.png`);
+  loadSprite("collectible-redundancy", `${ASSET_BASE}collectible-redundancy.png`);
   loadSprite("goal-terminal", `${ASSET_BASE}goal-terminal.png`);
   loadSprite("bg-subway", `${ASSET_BASE}bg-subway.png`);
   loadSprite("tile-ground", `${ASSET_BASE}tile-ground.png`);
@@ -109,6 +127,17 @@ function init() {
   let totalCollectibles = 0;
   let collectedCount = 0;
   let shootCooldownMs = 0;
+  // Counts down after a side-hit knockback; while > 0, the movement input
+  // block below leaves player.vel.x alone instead of overwriting it every
+  // frame, so the knockback shove is actually visible instead of being
+  // clobbered same-frame by whatever direction key is held.
+  let hitStunMs = 0;
+  // Which root-object sprite layer is currently active — "full" (the
+  // original sheet, used only while airborne) or "torso" (grounded,
+  // legs-less crop, with the separate legs child carrying the walk cycle).
+  // Tracked locally rather than queried off the sprite component each
+  // frame so the .use() swap below only happens on an actual transition.
+  let playerLayer = "full";
   // Non-null while the player is riding the bonus pole down to the goal —
   // see the "pole" collision handler and updateClimb() below.
   let climb = null;
@@ -199,6 +228,13 @@ function init() {
           totalCollectibles += 1;
           return [];
         },
+        // Not counted toward totalCollectibles/the Full Deploy bonus — a
+        // full-health run shouldn't need to fish for a heal it doesn't need
+        // just to hit 100%.
+        r: (tilePos) => {
+          createCollectible("redundancy", tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          return [];
+        },
         F: (tilePos) => {
           const baseX = tilePos.x * TILE_SIZE;
           const groundY = (tilePos.y + 1) * TILE_SIZE;
@@ -228,6 +264,10 @@ function init() {
     // destroy() outright.
     collectedCount = 0;
     climb = null;
+    hitStunMs = 0;
+    playerLayer = "full";
+    player.use(sprite("player", { anim: "idle" }));
+    player.legs.hidden = true;
     clearBullets();
     player.pos.x = playerSpawn.x;
     player.pos.y = playerSpawn.y;
@@ -257,10 +297,23 @@ function init() {
     });
   }
 
+  function renderHighScores() {
+    if (!highscoresEl) return;
+    const list = loadHighScores();
+    if (list.length === 0) {
+      highscoresEl.hidden = true;
+      highscoresEl.innerHTML = "";
+      return;
+    }
+    highscoresEl.hidden = false;
+    highscoresEl.innerHTML = list.map((entry) => `<li>${entry.score}</li>`).join("");
+  }
+
   function showOverlay(message, buttonLabel) {
     overlayEl.hidden = false;
     messageEl.textContent = message;
     startBtn.textContent = buttonLabel;
+    renderHighScores();
   }
 
   function hideOverlay() {
@@ -268,6 +321,7 @@ function init() {
   }
 
   function startGame() {
+    audio.initAudio();
     if (state.isOver || !player) {
       state.score = 0;
       state.redundancy = MAX_REDUNDANCY;
@@ -287,7 +341,24 @@ function init() {
 
   startBtn.addEventListener("click", startGame);
 
+  function syncMuteBtn() {
+    if (!muteBtn) return;
+    const muted = audio.isMuted();
+    muteBtn.textContent = muted ? "\u{1F507}" : "\u{1F50A}";
+    muteBtn.setAttribute("aria-label", muted ? "Unmute sound" : "Mute sound");
+    muteBtn.setAttribute("aria-pressed", String(muted));
+  }
+
+  if (muteBtn) {
+    muteBtn.addEventListener("click", () => {
+      audio.toggleMuted();
+      syncMuteBtn();
+    });
+    syncMuteBtn();
+  }
+
   buildLevel();
+  if (bestEl) bestEl.textContent = getTopScore();
   showOverlay("Run, jump, and reach Deploy to Production.", "Start Game");
 
   function triggerHitFlash() {
@@ -326,16 +397,27 @@ function init() {
     if (state.isHitInvincible) return;
     const gameOver = state.loseSegment();
     triggerHitFlash();
+    audio.playHit();
     if (gameOver) {
-      showOverlay(`Redundancy exhausted — taken down by ${sourceLabel}. Game over.`, "Try Again");
+      const { rank } = submitHighScore(state.score);
+      if (bestEl) bestEl.textContent = getTopScore();
+      const scoreNote = rank === 1 ? " New best!" : rank ? " High score!" : "";
+      audio.playLose();
+      showOverlay(`Redundancy exhausted — taken down by ${sourceLabel}. Game over.${scoreNote}`, "Try Again");
       return;
     }
     state.triggerHitInvincibility(HIT_INVINCIBLE_MS);
     if (opts.respawn) {
       respawnAfterHit();
     } else if (opts.knockbackDir) {
+      // No manufactured vertical pop here — that used to double as a free
+      // jump that could carry the player clear across a pit they never
+      // intentionally jumped for. Gravity still governs vel.y normally, so
+      // a hit taken mid-air still arcs from whatever momentum it already
+      // had; hitStunMs just holds the horizontal shove for a beat instead
+      // of letting the input block overwrite it the very next frame.
       player.vel.x = opts.knockbackDir * 220;
-      player.vel.y = -JUMP_FORCE * 0.35;
+      hitStunMs = HIT_STUN_MS;
     }
   }
 
@@ -343,6 +425,7 @@ function init() {
     // Never destroy() — see the comment in resetRound(). Hiding + pausing +
     // moving far away is functionally equivalent (invisible, inert, can't
     // collide) without ever touching the object graph after initial build.
+    audio.playEnemyDefeated();
     enemy.defeated = true;
     enemy.hidden = true;
     enemy.paused = true;
@@ -360,6 +443,11 @@ function init() {
     }
     if (total > 0) state.addScore(total);
     state.win();
+    audio.playWin();
+    const { rank } = submitHighScore(state.score);
+    if (bestEl) bestEl.textContent = getTopScore();
+    if (rank === 1) parts.push("New best!");
+    else if (rank) parts.push("High score!");
     showOverlay(parts.join(" "), "Play Again");
   }
 
@@ -367,8 +455,8 @@ function init() {
     player.vel.x = 0;
     player.vel.y = CLIMB_SPEED;
     player.pos.x = climb.poleX;
-    if (player.pos.y >= climb.poleBottom - player.height) {
-      player.pos.y = climb.poleBottom - player.height;
+    if (player.pos.y >= climb.poleBottom - PLAYER_HEIGHT) {
+      player.pos.y = climb.poleBottom - PLAYER_HEIGHT;
       const bonus = Math.round((climb.grabHeight / POLE_HEIGHT) * 1000);
       climb = null;
       winRound(bonus, bonus > 0 ? `Root climb bonus +${bonus}!` : "");
@@ -395,25 +483,48 @@ function init() {
 
     state.tick(dt() * 1000);
     if (shootCooldownMs > 0) shootCooldownMs -= dt() * 1000;
+    if (hitStunMs > 0) hitStunMs -= dt() * 1000;
 
     player.opacity = state.isHitInvincible ? (Math.floor(state.hitTimer / 90) % 2 === 0 ? 1 : 0.35) : 1;
+    player.legs.opacity = player.opacity;
 
     if (climb) {
       updateClimb();
       return;
     }
 
-    if (isButtonDown("left")) {
-      player.vel.x = -MOVE_SPEED;
-      player.flipX = true;
-    } else if (isButtonDown("right")) {
-      player.vel.x = MOVE_SPEED;
-      player.flipX = false;
-    } else {
-      player.vel.x = 0;
+    if (hitStunMs <= 0) {
+      if (isButtonDown("left")) {
+        player.vel.x = -MOVE_SPEED;
+        player.flipX = true;
+      } else if (isButtonDown("right")) {
+        player.vel.x = MOVE_SPEED;
+        player.flipX = false;
+      } else {
+        player.vel.x = 0;
+      }
     }
-    const desiredAnim = player.isGrounded() ? (player.vel.x !== 0 ? "run" : "idle") : "jump";
-    if (player.getCurAnim()?.name !== desiredAnim) player.play(desiredAnim);
+    // Grounded: swap the root object to the legs-less torso crop and let
+    // the separate legs child (see createPlayer()) carry the walk cycle.
+    // Airborne: swap back to the original full sheet's static jump frame,
+    // which already has its own baked-in legs, and hide the legs child so
+    // it doesn't double up.
+    if (player.isGrounded()) {
+      if (playerLayer !== "torso") {
+        player.use(sprite("player-torso"));
+        playerLayer = "torso";
+      }
+      player.legs.hidden = false;
+      const desiredLegsAnim = player.vel.x !== 0 ? "run" : "stand";
+      if (player.legs.getCurAnim()?.name !== desiredLegsAnim) player.legs.play(desiredLegsAnim);
+    } else {
+      if (playerLayer !== "full") {
+        player.use(sprite("player", { anim: "jump" }));
+        playerLayer = "full";
+      }
+      player.legs.hidden = true;
+    }
+    player.legs.flipX = player.flipX;
 
     if (player.pos.y > FALL_DEATH_Y) {
       handlePlayerHit("a fall", { respawn: true });
@@ -437,8 +548,9 @@ function init() {
   });
 
   onButtonPress("jump", () => {
-    if (state.isPlaying && player && !climb && player.isGrounded()) {
+    if (state.isPlaying && player && !climb && hitStunMs <= 0 && player.isGrounded()) {
       player.jump(JUMP_FORCE);
+      audio.playJump();
     }
   });
 
@@ -447,6 +559,7 @@ function init() {
     shootCooldownMs = SHOOT_COOLDOWN_MS;
     const dir = player.flipX ? -1 : 1;
     createBullet("player", player.pos.x + (dir > 0 ? 42 : -12), player.pos.y + 16, dir);
+    audio.playShoot();
   });
 
   onCollide("player", "enemy", (playerObj, enemy, col) => {
@@ -494,8 +607,14 @@ function init() {
     if (item.collectibleType === "root-access") {
       state.activatePower(POWER_DURATION_MS);
       state.addScore(50);
+      audio.playCollectPower();
+    } else if (item.collectibleType === "redundancy") {
+      state.restoreRedundancy(1);
+      state.addScore(25);
+      audio.playCollectRedundancy();
     } else {
       state.addScore(10);
+      audio.playCollectCash();
     }
   });
 
