@@ -1,290 +1,550 @@
+/* ==========================================================================
+   NapOnline — red/terminal design system
+   Mobile-first. Custom properties are the single source of truth for the
+   palette — see AGENTS.md before changing these.
+   ========================================================================== */
+
+:root {
+  --bg-void: #121013;
+  --bg-panel: #1c1417;
+  --bg-panel-raised: #241a1d;
+  --crimson-deep: #6e0f1a;
+  --red-accent: #ff2d3a;
+  --red-accent-dim: #b3131f;
+  --text-primary: #f3ecec;
+  --text-muted: #b8a9ab;
+  --focus-ring: #ff6b74;
+  --goal-green: #35d07f;
+
+  --font-mono: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
+  --container-max: 960px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   padding: 0;
-  background: #151515 url("../images/bkg.png") 0 0;
-  color: #eaeaea;
-  font: 16px;
-  line-height: 1.5;
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
+  background:
+    linear-gradient(rgba(110, 15, 26, 0.08) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, rgba(110, 15, 26, 0.08) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--bg-void);
+  color: var(--text-primary);
+  font: 16px/1.5 var(--font-mono);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* General & 'Reset' Stuff */
-
 .container {
-  width: 90%;
-  max-width: 600px;
+  width: 92%;
+  max-width: var(--container-max);
   margin: 0 auto;
 }
 
-section {
-  display: block;
-  margin: 0 0 20px 0;
+a {
+  color: var(--focus-ring);
+  text-decoration: none;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  margin: 0 0 20px;
+a:hover {
+  text-decoration: underline;
 }
 
-li {
-  line-height: 1.4 ;
-}
-
-/* Header, <header>
-   header   - container
-   h1       - project name
-   h2       - project description
-*/
-
-header {
-  background: rgba(0, 0, 0, 0.1);
-  width: 100%;
-  border-bottom: 1px dashed #b5e853;
-  padding: 20px 0;
-  margin: 0 0 40px 0;
-}
-
-header h1 {
-  font-size: 30px;
-  line-height: 1.5;
-  margin: 0 0 0 -40px;
-  font-weight: bold;
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  color: #b5e853;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1),
-               0 0 5px rgba(181, 232, 83, 0.1),
-               0 0 10px rgba(181, 232, 83, 0.1);
-  letter-spacing: -1px;
-  -webkit-font-smoothing: antialiased;
-}
-
-header h1:before {
-  content: "./ ";
-  font-size: 24px;
-}
-
-header h2 {
-  font-size: 18px;
-  font-weight: 300;
-  color: #666;
-}
-
-#downloads .btn {
-  display: inline-block;
-  text-align: center;
-  margin: 0;
-}
-
-/* Main Content
-*/
-
-#main_content {
-  width: 100%;
-  -webkit-font-smoothing: antialiased;
-}
-section img {
-  max-width: 100%
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  color: #b5e853;
-  letter-spacing: -0.03em;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1),
-               0 0 5px rgba(181, 232, 83, 0.1),
-               0 0 10px rgba(181, 232, 83, 0.1);
+  font-family: var(--font-mono);
+  color: var(--red-accent);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.6em;
 }
 
-#main_content h1 {
-  font-size: 30px;
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.1rem; }
+
+p {
+  margin: 0 0 1em;
 }
 
-#main_content h2 {
-  font-size: 24px;
+ul, ol {
+  padding-left: 1.4em;
 }
 
-#main_content h3 {
-  font-size: 18px;
+/* Header / Footer
+   ========================================================================== */
+
+header {
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px dashed var(--crimson-deep);
+  padding: 16px 0;
 }
 
-#main_content h4 {
-  font-size: 14px;
+header .container {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
 }
 
-#main_content h5 {
-  font-size: 12px;
-  text-transform: uppercase;
-  margin: 0 0 5px 0;
-}
-
-#main_content h6 {
-  font-size: 12px;
-  text-transform: uppercase;
-  color: #999;
-  margin: 0 0 5px 0;
-}
-
-#main_content ul li .r-name {
-  color: #b5e853;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1),
-               0 0 5px rgba(181, 232, 83, 0.1),
-               0 0 10px rgba(181, 232, 83, 0.1);
-}
-
-dt {
-  font-style: italic;
+.site-title {
+  font-size: 1.3rem;
   font-weight: bold;
+  color: var(--red-accent);
+  text-shadow: 0 0 8px rgba(255, 45, 58, 0.35);
 }
 
-ul li {
-  list-style: none;
+.site-title::before {
+  content: "./ ";
 }
 
-ul li:before {
-  content: ">>";
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  font-size: 13px;
-  color: #b5e853;
-  margin-left: -37px;
-  margin-right: 21px;
-  line-height: 16px;
+header .crumb {
+  color: var(--text-muted);
 }
 
-div.r-ingredients ul li:before {
-  content: "*";
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  font-size: 13px;
-  color: #b5e853;
-  margin-left: -37px;
-  margin-right: 15px;
-  line-height: 16px;
+footer {
+  margin: 40px 0 20px;
+  padding: 16px 0;
+  border-top: 1px dashed var(--crimson-deep);
 }
 
-div.r-directions ul li:before {
-  content: "*";
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  font-size: 13px;
-  color: #b5e853;
-  margin-left: -37px;
-  margin-right: 15px;
-  line-height: 16px;
+footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--text-muted);
 }
 
-div.r-references ul li:before {
-  content: "*";
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  font-size: 13px;
-  color: #b5e853;
-  margin-left: -37px;
-  margin-right: 15px;
-  line-height: 16px;
+footer a:hover {
+  color: var(--focus-ring);
 }
 
-div.r-references ul li a {
-  font-size: 12px;
-  text-decoration: none;
-  text-shadow: none;
+.icon-github {
+  flex: none;
 }
 
-blockquote {
-  color: #aaa;
-  padding-left: 10px;
-  border-left: 1px dotted #666;
-}
-
-pre {
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 10px;
-  font-size: 14px;
-  color: #b5e853;
-  border-radius: 2px;
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
-  text-wrap: normal;
-  overflow: auto;
-  overflow-y: hidden;
-}
-
-table {
-  width: 100%;
-  margin: 0 0 20px 0;
-}
-
-th {
-  text-align: left;
-  border-bottom: 1px dashed #b5e853;
-  padding: 5px 10px;
-}
-
-td {
-  padding: 5px 10px;
-}
-
-hr {
-  height: 0;
-  border: 0;
-  border-bottom: 1px dashed #b5e853;
-  color: #b5e853;
+main.container {
+  padding: 32px 0;
 }
 
 /* Buttons
-*/
+   ========================================================================== */
 
 .btn {
   display: inline-block;
-  background: -webkit-linear-gradient(top, rgba(40, 40, 40, 0.3), rgba(35, 35, 35, 0.3) 50%, rgba(10, 10, 10, 0.3) 50%, rgba(0, 0, 0, 0.3));
-  padding: 8px 18px;
-  border-radius: 50px;
-  border: 2px solid rgba(0, 0, 0, 0.7);
-  border-bottom: 2px solid rgba(0, 0, 0, 0.7);
-  border-top: 2px solid rgba(0, 0, 0, 1);
-  color: rgba(255, 255, 255, 0.8);
-  font-family: Helvetica, Arial, sans-serif;
+  background: var(--red-accent);
+  color: #1a0507;
+  font-family: var(--font-mono);
   font-weight: bold;
-  font-size: 13px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
   text-decoration: none;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.75);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .btn:hover {
-  background: -webkit-linear-gradient(top, rgba(40, 40, 40, 0.6), rgba(35, 35, 35, 0.6) 50%, rgba(10, 10, 10, 0.8) 50%, rgba(0, 0, 0, 0.8));
+  background: var(--focus-ring);
+  text-decoration: none;
 }
 
-.btn .icon {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin: 1px 8px 0 0;
-  float: left;
+.btn-primary {
+  box-shadow: 0 0 16px rgba(255, 45, 58, 0.4);
 }
 
-.btn-github .icon {
-  opacity: 0.6;
-  background: url("../images/blacktocat.png") 0 0 no-repeat;
+/* Hero + Game
+   ========================================================================== */
+
+#hero {
+  margin-bottom: 48px;
 }
 
-/* Links
-   a, a:hover, a:visited
-*/
-
-a {
-  color: #63c0f5;
-  text-shadow: 0 0 5px rgba(104, 182, 255, 0.5);
+.hero-intro h1 {
+  margin-bottom: 0.2em;
 }
 
-/* Clearfix */
-
-.cf:before, .cf:after {
-  content:"";
-  display:table;
+.hero-tagline {
+  color: var(--text-muted);
 }
 
-.cf:after {
-  clear:both;
+.game-wrap {
+  position: relative;
+  max-width: 480px;
+  margin: 24px auto 0;
 }
 
-.cf {
-  zoom:1;
+.game-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1em;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.hud-item strong {
+  color: var(--red-accent);
+}
+
+.hud-item--power strong {
+  color: var(--goal-green);
+}
+
+.redundancy-bar {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.redundancy-node {
+  width: 20px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--crimson-deep);
+  border: 1px solid var(--red-accent-dim);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.redundancy-node.is-up {
+  background: var(--goal-green);
+  border-color: var(--goal-green);
+  box-shadow: 0 0 6px rgba(53, 208, 127, 0.6);
+}
+
+.redundancy-node.is-down {
+  background: transparent;
+  border-color: var(--red-accent-dim);
+  box-shadow: none;
+}
+
+.game-canvas-frame {
+  position: relative;
+  border: 1px solid var(--crimson-deep);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  overflow: hidden;
+  aspect-ratio: 480 / 240;
+}
+
+#platformer-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.game-hit-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255, 45, 58, 0.55) 0%, rgba(255, 45, 58, 0) 70%);
+  opacity: 0;
+}
+
+.game-hit-flash.is-active {
+  animation: hit-flash 420ms ease-out;
+}
+
+@keyframes hit-flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(18, 16, 19, 0.85);
+  text-align: center;
+  padding: 16px;
+}
+
+.game-overlay[hidden] {
+  display: none;
+}
+
+.game-overlay__msg {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 32ch;
+}
+
+.game-touch-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.game-touch-controls {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .game-touch-controls {
+    display: flex;
+  }
+}
+
+.touch-row {
+  display: flex;
+  gap: 6px;
+}
+
+.touch-btn {
+  width: 64px;
+  height: 56px;
+  border-radius: 6px;
+  border: 1px solid var(--crimson-deep);
+  background: var(--bg-panel-raised);
+  color: var(--red-accent);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.touch-btn:active {
+  background: var(--crimson-deep);
+}
+
+.touch-btn--jump {
+  width: 100%;
+  max-width: 220px;
+  color: var(--goal-green);
+  border-color: var(--goal-green);
+  font-family: var(--font-mono);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.touch-btn--shoot {
+  width: auto;
+  padding: 0 14px;
+  color: #ffb14e;
+  border-color: #ffb14e;
+  font-family: var(--font-mono);
+  font-weight: bold;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.game-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+
+/* Portfolio
+   ========================================================================== */
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.portfolio-card {
+  display: block;
+  background: var(--bg-panel);
+  border: 1px solid var(--crimson-deep);
+  border-radius: 6px;
+  padding: 18px;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.portfolio-card:hover {
+  border-color: var(--red-accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.portfolio-card h3 {
+  margin-bottom: 0.3em;
+}
+
+.portfolio-card p {
+  color: var(--text-muted);
+  margin-bottom: 0.6em;
+}
+
+.portfolio-card--featured {
+  border-color: var(--red-accent);
+  box-shadow: 0 0 20px rgba(255, 45, 58, 0.15);
+}
+
+.portfolio-card__github {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.85rem;
+  color: var(--focus-ring);
+}
+
+/* Recipes
+   ========================================================================== */
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.recipe-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: var(--bg-panel);
+  border: 1px solid var(--crimson-deep);
+  border-radius: 6px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.recipe-card:hover {
+  border-color: var(--red-accent);
+}
+
+.recipe-card__img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.recipe-card__img--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel-raised);
+  color: var(--red-accent);
+  font-size: 2.5rem;
+  text-transform: uppercase;
+}
+
+.recipe-card__body {
+  padding: 12px 14px 16px;
+}
+
+.recipe-card__name {
+  display: block;
+  font-weight: bold;
+  color: var(--red-accent);
+  margin-bottom: 0.3em;
+}
+
+.recipe-card__desc {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+dialog.recipe-dialog {
+  width: min(90vw, 640px);
+  max-height: 85vh;
+  border: 1px solid var(--red-accent);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  padding: 24px;
+}
+
+dialog.recipe-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.recipe-dialog__close {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px -8px 0 0;
+}
+
+.recipe-dialog__close button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.recipe-dialog__close button:hover {
+  color: var(--red-accent);
+}
+
+.recipe-dialog__desc {
+  color: var(--text-muted);
+}
+
+.recipe-dialog__img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin-bottom: 1em;
+}
+
+.recipe-gallery {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin-bottom: 1em;
+}
+
+.recipe-gallery img {
+  scroll-snap-align: start;
+  height: 180px;
+  border-radius: 6px;
+  flex: none;
+}
+
+.recipe-dialog__refs a {
+  font-size: 0.85rem;
+}
+
+/* Responsive breakpoints
+   ========================================================================== */
+
+@media (min-width: 600px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .game-wrap {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .game-wrap {
+    max-width: 860px;
+  }
 }

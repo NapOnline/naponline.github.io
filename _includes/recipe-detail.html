@@ -1,0 +1,51 @@
+{% for recipe_hash in site.data.recipes %}
+  {% assign recipe = recipe_hash[1] %}
+  {% assign slug = recipe_hash[0] %}
+  <dialog class="recipe-dialog" id="recipe-{{ slug }}" aria-labelledby="recipe-{{ slug }}-title">
+    <form method="dialog" class="recipe-dialog__close">
+      <button type="submit" aria-label="Close">&times;</button>
+    </form>
+    <h2 id="recipe-{{ slug }}-title">{{ recipe.name }}</h2>
+    <p class="recipe-dialog__desc">{{ recipe.description }}</p>
+
+    {% if recipe.pictures.size > 1 %}
+      <div class="recipe-gallery">
+        {% for picture in recipe.pictures %}
+          <img src="{{ picture.url }}" alt="{{ picture.alt | default: recipe.name }}" loading="lazy">
+        {% endfor %}
+      </div>
+    {% elsif recipe.pictures.size == 1 %}
+      <img class="recipe-dialog__img" src="{{ recipe.pictures[0].url }}" alt="{{ recipe.pictures[0].alt | default: recipe.name }}" loading="lazy">
+    {% endif %}
+
+    {% if recipe.equipment %}
+      <h3>Equipment</h3>
+      <ul>
+        {% for item in recipe.equipment %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if recipe.ingredients.size > 0 %}
+      <h3>Ingredients</h3>
+      <ul>
+        {% for ingredient in recipe.ingredients %}<li>{{ ingredient }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if recipe.directions.size > 0 %}
+      <h3>Directions</h3>
+      <ol>
+        {% for direction in recipe.directions %}<li>{{ direction }}</li>{% endfor %}
+      </ol>
+    {% endif %}
+
+    {% if recipe.references.size > 0 %}
+      <h3>References</h3>
+      <ul class="recipe-dialog__refs">
+        {% for reference in recipe.references %}
+          <li><a href="{{ reference.url }}" target="_blank" rel="noopener">{{ reference.name }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </dialog>
+{% endfor %}

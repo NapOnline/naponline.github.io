@@ -1,0 +1,17 @@
+<section id="portfolio" aria-labelledby="portfolio-heading">
+  <h2 id="portfolio-heading">Projects</h2>
+  <div class="portfolio-grid">
+    {% for p in site.data.projects %}
+    <a class="portfolio-card{% if p.featured %} portfolio-card--featured{% endif %}" href="{{ p.link }}">
+      <h3>{{ p.name }}</h3>
+      <p>{{ p.description }}</p>
+      {% if p.github %}
+      <span class="portfolio-card__github">
+        {% include icon-github.html %}
+        View on GitHub
+      </span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>

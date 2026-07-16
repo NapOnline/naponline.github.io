@@ -1,0 +1,22 @@
+FROM registry.fedoraproject.org/fedora-toolbox:latest
+
+# Fedora's system `ruby` package tracks the latest release (4.x), but the
+# github-pages gem's own dependency chain (commonmarker, pulled in via
+# jekyll-commonmark-ghpages) requires Ruby < 4.0 to match GitHub's actual
+# Pages build environment. So instead of the system ruby, we use rbenv +
+# ruby-build to compile a compatible Ruby (pinned via .ruby-version at the
+# repo root) — see AGENTS.md. No Node/npm — this site intentionally has
+# zero JS build tooling.
+RUN dnf install -y --setopt=install_weak_deps=False \
+        rbenv \
+        ruby-build-rbenv \
+        ruby-build-ruby \
+        gcc \
+        gcc-c++ \
+        make \
+        redhat-rpm-config \
+        zlib-devel \
+        openssl-devel \
+        readline-devel \
+        libyaml-devel \
+    && dnf clean all

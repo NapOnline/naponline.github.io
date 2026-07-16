@@ -1,0 +1,17 @@
+<div class="recipe-grid">
+  {% for recipe_hash in site.data.recipes %}
+    {% assign recipe = recipe_hash[1] %}
+    {% assign slug = recipe_hash[0] %}
+    <button type="button" class="recipe-card" data-recipe-trigger="recipe-{{ slug }}">
+      {% if recipe.pictures.size > 0 %}
+        <img class="recipe-card__img" src="{{ recipe.pictures[0].url }}" alt="{{ recipe.pictures[0].alt | default: recipe.name }}" loading="lazy">
+      {% else %}
+        <span class="recipe-card__img recipe-card__img--placeholder" aria-hidden="true">{{ recipe.name | slice: 0 }}</span>
+      {% endif %}
+      <span class="recipe-card__body">
+        <span class="recipe-card__name">{{ recipe.name }}</span>
+        <span class="recipe-card__desc">{{ recipe.description }}</span>
+      </span>
+    </button>
+  {% endfor %}
+</div>

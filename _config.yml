@@ -5,7 +5,11 @@ name: Brad Gibson
 
 title: NapOnline
 subtitle: Welcome to NapOnline
+description: NapOnline &mdash; recipes, projects, and a DevOps-themed arcade game.
 
-highlighter: rouge
+# github-pages silently defaults to jekyll-theme-primer if this key is
+# absent, pulling in an unused normalize.css bundle. This site has its own
+# hand-written stylesheet, so opt out explicitly.
+theme: null
 
-exclude: ['README.md', 'Gemfile.lock', 'Gemfile', 'Rakefile']
+exclude: ['README.md', 'AGENTS.md', 'Gemfile.lock', 'Gemfile', 'Rakefile', 'dev']

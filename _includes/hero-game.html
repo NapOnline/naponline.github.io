@@ -1,0 +1,42 @@
+<section id="hero">
+  <div class="hero-intro">
+    <h1>{{ site.subtitle }}</h1>
+    <p class="hero-tagline">Run, jump, and reach Deploy to Production.</p>
+  </div>
+
+  <div class="game-wrap">
+    <div class="game-hud">
+      <span class="hud-item">Score <strong id="game-score">0</strong></span>
+      <span class="hud-item hud-item--redundancy">
+        REDUNDANCY
+        <span class="redundancy-bar" id="game-redundancy">
+          <span class="redundancy-node is-up" data-node="0"></span>
+          <span class="redundancy-node is-up" data-node="1"></span>
+          <span class="redundancy-node is-up" data-node="2"></span>
+        </span>
+      </span>
+      <span class="hud-item hud-item--power" id="game-power" hidden>ROOT ACCESS <strong id="game-power-timer"></strong></span>
+    </div>
+
+    <div class="game-canvas-frame">
+      <canvas id="platformer-canvas" role="img" aria-label="DevOps platformer game board"></canvas>
+      <div class="game-hit-flash" id="game-hit-flash"></div>
+      <div class="game-overlay" id="game-overlay">
+        <button type="button" class="btn btn-primary" id="game-start">Start Game</button>
+        <p class="game-overlay__msg" id="game-message"></p>
+      </div>
+    </div>
+
+    <div class="game-touch-controls" id="game-touch-controls">
+      <div class="touch-row">
+        <button type="button" class="touch-btn" data-action="left" aria-label="Move left">&#9664;</button>
+        <button type="button" class="touch-btn" data-action="right" aria-label="Move right">&#9654;</button>
+        <button type="button" class="touch-btn touch-btn--shoot" data-action="shoot" aria-label="Shoot">FIRE</button>
+      </div>
+      <button type="button" class="touch-btn touch-btn--jump" data-action="jump" aria-label="Jump">JUMP</button>
+    </div>
+    <p class="game-hint">Arrow keys / WASD to move, Space to jump, X to fire &mdash; on touch devices, use the pad above.</p>
+  </div>
+
+  <script type="module" src="{{ '/javascripts/game/main.js' | relative_url }}"></script>
+</section>
