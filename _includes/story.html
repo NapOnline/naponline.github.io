@@ -1,4 +1,11 @@
-<section id="story" aria-labelledby="story-heading">
+<div class="story-trigger">
+  <button type="button" class="btn-outline" data-dialog-trigger="story-dialog">Read the Incident Report</button>
+</div>
+
+<dialog class="story-dialog" id="story-dialog" aria-labelledby="story-heading">
+  <form method="dialog" class="story-dialog__close">
+    <button type="submit" aria-label="Close">&times;</button>
+  </form>
   <h2 id="story-heading">The Incident</h2>
   <p class="story-intro">It's 2am and the pager won't stop. Somewhere between the subway and the deploy pipeline, things went sideways — bugs are patrolling, latency is spiking, and at least one pipeline has failed spectacularly. As the on-call engineer, there's only one way out: fight through, keep REDUNDANCY above zero, and reach the Deploy to Production terminal before the next outage does.</p>
 
@@ -22,4 +29,6 @@
       </li>
     {% endfor %}
   </ul>
-</section>
+</dialog>
+
+<script defer src="{{ '/javascripts/story.js' | relative_url }}"></script>
