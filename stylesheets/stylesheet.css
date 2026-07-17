@@ -328,6 +328,25 @@ main.container {
   100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
 }
 
+.game-power-toast {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-weight: bold;
+  font-size: 1.15rem;
+  color: var(--gold-accent);
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.7);
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.game-power-toast.is-active {
+  animation: combo-pop 900ms ease-out;
+}
+
 .game-achievement-toast {
   position: absolute;
   top: 10px;

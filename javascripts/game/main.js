@@ -12,6 +12,8 @@ import {
   createBullet,
   spawnEnemyFragments,
   spawnEnemyDeathSpark,
+  spawnPickupSparkle,
+  spawnFloatingText,
 } from "./entities.js";
 import { createCollectible, createGoal, createPole, POLE_HEIGHT } from "./collectibles.js";
 import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
@@ -121,6 +123,7 @@ function init() {
   const hitFlashEl = document.getElementById("game-hit-flash");
   const comboEl = document.getElementById("game-combo");
   const perfectFlashEl = document.getElementById("game-perfect-flash");
+  const powerToastEl = document.getElementById("game-power-toast");
 
   kaplay({
     canvas,
@@ -357,8 +360,8 @@ function init() {
     get("bullet").forEach((bullet) => destroy(bullet));
   }
 
-  function clearDeathEffects() {
-    get("death-fx").forEach((fx) => destroy(fx));
+  function clearEffects() {
+    get("fx").forEach((fx) => destroy(fx));
   }
 
   function resetRound() {
@@ -385,7 +388,7 @@ function init() {
     player.use(sprite("player", { anim: "idle" }));
     player.legs.hidden = true;
     clearBullets();
-    clearDeathEffects();
+    clearEffects();
     player.pos.x = playerSpawn.x;
     player.pos.y = playerSpawn.y;
     player.vel.x = 0;
@@ -567,6 +570,17 @@ function init() {
     achievementToastEl.classList.remove("is-active");
     void achievementToastEl.offsetWidth;
     achievementToastEl.classList.add("is-active");
+  }
+
+  // A dedicated element rather than reusing comboEl/achievementToastEl: a
+  // Root Access pickup landing the same frame as a kill-combo would clobber
+  // shared text, and it isn't a one-time unlock like the achievement toast.
+  function triggerPowerToast(text) {
+    if (!powerToastEl) return;
+    powerToastEl.textContent = text;
+    powerToastEl.classList.remove("is-active");
+    void powerToastEl.offsetWidth;
+    powerToastEl.classList.add("is-active");
   }
 
   // Attempts to unlock each id, and if any are newly unlocked (not already
@@ -1017,6 +1031,10 @@ function init() {
   onCollide("player", "collectible", (playerObj, item) => {
     if (!state.isPlaying || item.collected) return;
     item.collected = true;
+    // Capture the live position before hiding/relocating below — same
+    // ordering lesson as defeatEnemy(): the effects need real coordinates.
+    const fxX = item.pos.x + item.width / 2;
+    const fxY = item.pos.y + item.height / 2;
     item.hidden = true;
     item.pos.x = -9999;
     collectedCount += 1;
@@ -1024,14 +1042,21 @@ function init() {
       state.activatePower(POWER_DURATION_MS);
       state.addScore(50);
       audio.playCollectPower();
+      spawnPickupSparkle(fxX, fxY, [rgb(240, 181, 65), rgb(255, 238, 131)], { count: 24 });
+      spawnFloatingText(fxX, fxY, "+50", [255, 238, 131]);
+      triggerPowerToast("ROOT ACCESS!");
     } else if (item.collectibleType === "redundancy") {
       state.restoreRedundancy(1);
       state.addScore(25);
       audio.playCollectRedundancy();
+      spawnPickupSparkle(fxX, fxY, [rgb(53, 208, 127), rgb(0, 102, 255)]);
+      spawnFloatingText(fxX, fxY, "+25", [53, 208, 127]);
     } else {
       state.addScore(10);
       audio.playCollectCash();
       collectedCash += 1;
+      spawnPickupSparkle(fxX, fxY, [rgb(255, 224, 120), rgb(74, 178, 110)]);
+      spawnFloatingText(fxX, fxY, "+10", [255, 224, 120]);
     }
   });
 

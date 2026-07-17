@@ -259,12 +259,13 @@ const FRAGMENT_LIFE_MS = 500;
 // Enemy death "shatter" effect — see defeatEnemy() in main.js. Spawns 4
 // fragments cut from the enemy's own sprite (enemy-<type>-fragment-0..3.png,
 // see dev/generate-enemy-fragments.sh), each flying outward under a manual
-// gravity/velocity and fading out, then destroy()ing itself. Tagged
-// "death-fx", never "enemy" — resetRound()'s enemy-revival loop must never
-// touch these. Plain runtime objects, same "safe to destroy()" category as
-// bullets above — never touched by addLevel(), so never subject to the
-// "don't destroy() level entities" constraint noted in main.js's
-// resetRound().
+// gravity/velocity and fading out, then destroy()ing itself. Tagged "fx" —
+// a shared tag for every transient one-shot effect in this file (also used
+// by the pickup effects below), never "enemy" — resetRound()'s
+// enemy-revival loop must never touch these. Plain runtime objects, same
+// "safe to destroy()" category as bullets above — never touched by
+// addLevel(), so never subject to the "don't destroy() level entities"
+// constraint noted in main.js's resetRound().
 export function spawnEnemyFragments(enemy, config) {
   const halfW = config.width / 2;
   const halfH = config.height / 2;
@@ -282,7 +283,7 @@ export function spawnEnemyFragments(enemy, config) {
       opacity(1),
       rotate(rand(-30, 30)),
       z(6),
-      "death-fx",
+      "fx",
       {
         fragVel: vec2(dirSign * rand(60, 140), rand(-220, -100)),
         fragAngVel: rand(-360, 360),
@@ -322,8 +323,68 @@ export function spawnEnemyDeathSpark(x, y) {
       { lifetime: 0.45, rate: 0, direction: 0, spread: 180 },
     ),
     z(7),
-    "death-fx",
+    "fx",
   ]);
   fx.emit(16);
   fx.onEnd(() => destroy(fx));
+}
+
+// Small particle sparkle for a collectible pickup, colored per collectible
+// type by the caller (see main.js's onCollide("player","collectible", ...)).
+// Same one-shot particles() burst pattern as spawnEnemyDeathSpark above —
+// smaller/quicker by default, with caller-supplied colors instead of the
+// death spark's fixed orange palette. opts.count lets a rarer pickup (Root
+// Access) ask for a bigger burst without a separate function.
+const SPARKLE_DEFAULT_COUNT = 10;
+const SPARKLE_LIFE = 0.35;
+
+export function spawnPickupSparkle(x, y, colors, opts = {}) {
+  const count = opts.count ?? SPARKLE_DEFAULT_COUNT;
+  const fx = add([
+    pos(x, y),
+    particles(
+      {
+        max: count,
+        speed: [50, 140],
+        angle: [0, 360],
+        lifeTime: [0.2, SPARKLE_LIFE],
+        colors,
+        opacities: [1, 0],
+      },
+      { lifetime: SPARKLE_LIFE + 0.1, rate: 0, direction: 0, spread: 180 },
+    ),
+    z(7),
+    "fx",
+  ]);
+  fx.emit(count);
+  fx.onEnd(() => destroy(fx));
+}
+
+// Small floating "+N" score readout that rises FLOAT_TEXT_RISE px and fades
+// out over FLOAT_TEXT_LIFE_MS, then destroy()s itself — the same manual
+// dt()-driven countdown idiom spawnEnemyFragments uses above (this codebase
+// has never used tween() for its own effects, so this doesn't introduce it
+// either). anchor("center") just keeps "+10"/"+25"/"+50" centered on the
+// pickup regardless of string length, without measuring text width by hand.
+const FLOAT_TEXT_LIFE_MS = 550;
+const FLOAT_TEXT_RISE = 24;
+
+export function spawnFloatingText(x, y, label, textColor) {
+  const t = add([
+    pos(x, y),
+    anchor("center"),
+    text(label, { size: 12 }),
+    color(textColor[0], textColor[1], textColor[2]),
+    opacity(1),
+    z(8),
+    "fx",
+    { lifeMs: FLOAT_TEXT_LIFE_MS },
+  ]);
+  t.onUpdate(() => {
+    const dtSec = dt();
+    t.pos.y -= (FLOAT_TEXT_RISE / (FLOAT_TEXT_LIFE_MS / 1000)) * dtSec;
+    t.lifeMs -= dtSec * 1000;
+    t.opacity = Math.max(0, t.lifeMs / FLOAT_TEXT_LIFE_MS);
+    if (t.lifeMs <= 0) destroy(t);
+  });
 }
