@@ -1,0 +1,19 @@
+- id: bug
+  label: Bug
+  sprite: enemy-bug-1.png
+  description: "Low severity, high frequency. Patrols a short stretch and dies in one hit — but there's always another one."
+
+- id: latency-spike
+  label: Latency Spike
+  sprite: enemy-latency-spike-1.png
+  description: "Bursts of speed followed by a dead stop. Fast, erratic, and easy to misjudge."
+
+- id: failed-pipeline
+  label: Failed Pipeline
+  sprite: enemy-failed-pipeline-1.png
+  description: "The toughest thing in the tunnel. Erratic movement, three hits to put down, takes up the whole hallway."
+
+- id: outage
+  label: Outage
+  sprite: enemy-outage-1.png
+  description: "Doesn't move. Doesn't need to — it just keeps firing."

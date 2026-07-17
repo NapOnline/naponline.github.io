@@ -463,9 +463,14 @@ function init() {
     statsEl.textContent = `Accuracy: ${state.accuracyPercent}% (${state.shotsHit}/${state.shotsFired} shots hit)`;
   }
 
-  function showOverlay(message, buttonLabel, bonusLines) {
+  function showOverlay(message, buttonLabel, bonusLines, variant) {
     overlayEl.hidden = false;
-    overlayEl.classList.remove("game-overlay--perfect");
+    // Always clear before setting — same defensive pattern as the
+    // pre-existing --perfect toggle below — so a stale variant from a
+    // previous call (e.g. a loss) never lingers into the next (e.g. the
+    // idle screen after "Try Again").
+    overlayEl.classList.remove("game-overlay--perfect", "game-overlay--win", "game-overlay--lose");
+    if (variant) overlayEl.classList.add(`game-overlay--${variant}`);
     messageEl.textContent = message;
     startBtn.textContent = buttonLabel;
     renderStats();
@@ -636,7 +641,7 @@ function init() {
     if (bestEl) bestEl.textContent = getTopScore();
     const scoreNote = rank === 1 ? " New best!" : rank ? " High score!" : "";
     audio.playLose();
-    showOverlay(`Redundancy exhausted — taken down by ${deathSourceLabel}. Game over.${scoreNote}`, "Try Again");
+    showOverlay(`Redundancy exhausted — taken down by ${deathSourceLabel}. Game over.${scoreNote}`, "Try Again", undefined, "lose");
   }
 
   function handlePlayerHit(sourceLabel, opts = {}) {
@@ -811,7 +816,7 @@ function init() {
     if (rank === 1) message += " New best!";
     else if (rank) message += " High score!";
 
-    const reveal = () => showOverlay(message, "Play Again", bonusLines);
+    const reveal = () => showOverlay(message, "Play Again", bonusLines, "win");
 
     if (isPerfect) {
       // A brief on-canvas flourish before the overlay lands — gold screen

@@ -1,0 +1,14 @@
+- id: cash
+  label: Cash
+  sprite: collectible-cash.png
+  description: "+10. Every commit counts."
+
+- id: redundancy
+  label: Redundancy Restore
+  sprite: collectible-redundancy.png
+  description: "+25, and one REDUNDANCY node back online."
+
+- id: root-access
+  label: Root Access
+  sprite: powerup-root-access.png
+  description: "+50, and 8 seconds of doing whatever you want to whatever's in front of you."

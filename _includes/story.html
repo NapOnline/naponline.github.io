@@ -1,0 +1,25 @@
+<section id="story" aria-labelledby="story-heading">
+  <h2 id="story-heading">The Incident</h2>
+  <p class="story-intro">It's 2am and the pager won't stop. Somewhere between the subway and the deploy pipeline, things went sideways — bugs are patrolling, latency is spiking, and at least one pipeline has failed spectacularly. As the on-call engineer, there's only one way out: fight through, keep REDUNDANCY above zero, and reach the Deploy to Production terminal before the next outage does.</p>
+
+  <h3>Known Issues</h3>
+  <div class="portfolio-grid enemy-grid">
+    {% for enemy in site.data.enemies %}
+      <div class="portfolio-card enemy-card">
+        <img src="{{ '/javascripts/game/assets/' | append: enemy.sprite | relative_url }}" alt="{{ enemy.label }}" class="enemy-card__sprite">
+        <h4>{{ enemy.label }}</h4>
+        <p>{{ enemy.description }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h3>Field Kit</h3>
+  <ul class="field-kit">
+    {% for item in site.data.collectibles %}
+      <li>
+        <img src="{{ '/javascripts/game/assets/' | append: item.sprite | relative_url }}" alt="{{ item.label }}" class="field-kit__sprite">
+        <span><strong>{{ item.label }}</strong> — {{ item.description }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
