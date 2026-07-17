@@ -109,6 +109,12 @@ export const ENEMY_CONFIGS = {
 
 const ANIM_SWAP_SEC = 0.26;
 
+// How long before an "outage" turret fires that it starts telegraphing —
+// see updateEnemy()'s turret branch below. Previously readyToFire flipped
+// with zero visible warning; this gives the player a fair reaction window,
+// same idea as a Mega Man/Contra turret flashing before it shoots.
+const TURRET_TELEGRAPH_SEC = 0.3;
+
 // A bare area() defaults to the active sprite's full render rect — for the
 // player that's the whole 45x45 cell, which is roughly twice the width and
 // height of the actual character silhouette (idle bbox is ~x15-35,y15-45;
@@ -125,6 +131,12 @@ export function createPlayer(x, y) {
     area({ shape: new Rect(vec2(...PLAYER_HITBOX.offset), PLAYER_HITBOX.width, PLAYER_HITBOX.height) }),
     body(),
     opacity(1),
+    // Drives the jump/land squash-and-stretch — see main.js's onUpdate,
+    // which sets a stretched/squashed scale on takeoff/landing and decays
+    // it back toward (1,1) every frame. Scaling the parent composes through
+    // to the legs child automatically (it's a real child object, not a
+    // separate root entity), so no separate scale on player.legs is needed.
+    scale(1),
     "player",
   ]);
   // Legs are a child (parent-relative pos, never destroyed — only ever
@@ -209,9 +221,24 @@ function updateEnemy(enemy, config) {
     enemy.vel.x = 0;
     swapFrame(enemy, config, deltaTime);
     enemy.shootTimer -= deltaTime;
+    if (enemy.shootTimer <= TURRET_TELEGRAPH_SEC) {
+      // Pulse the tint toward a warning color as the shot approaches — the
+      // hit-flash blink (see the block above) already uses opacity for "I
+      // was just hit," so this uses color instead to stay visually distinct.
+      const elapsed = TURRET_TELEGRAPH_SEC - Math.max(0, enemy.shootTimer);
+      const pulse = Math.abs(Math.sin(elapsed * 25));
+      enemy.color = rgb(
+        lerp(config.tint[0], 255, pulse),
+        lerp(config.tint[1], 70, pulse),
+        lerp(config.tint[2], 50, pulse),
+      );
+    } else if (enemy.hitFlashMs <= 0) {
+      enemy.color = rgb(config.tint[0], config.tint[1], config.tint[2]);
+    }
     if (enemy.shootTimer <= 0) {
       enemy.shootTimer = config.shootIntervalSec;
       enemy.readyToFire = true;
+      enemy.color = rgb(config.tint[0], config.tint[1], config.tint[2]);
     }
     return;
   }
@@ -357,6 +384,58 @@ export function spawnPickupSparkle(x, y, colors, opts = {}) {
     "fx",
   ]);
   fx.emit(count);
+  fx.onEnd(() => destroy(fx));
+}
+
+// Muzzle flash at the gun tip — see main.js's onButtonPress("shoot", ...).
+// Same one-shot particles() pattern as the effects above, tiny and very
+// brief so it reads as an instantaneous spark rather than its own effect.
+const MUZZLE_FLASH_LIFE = 0.08;
+
+export function spawnMuzzleFlash(x, y) {
+  const fx = add([
+    pos(x, y),
+    particles(
+      {
+        max: 6,
+        speed: [40, 90],
+        angle: [0, 360],
+        lifeTime: [0.05, MUZZLE_FLASH_LIFE],
+        colors: [rgb(255, 250, 200), rgb(255, 200, 90)],
+        opacities: [1, 0],
+      },
+      { lifetime: MUZZLE_FLASH_LIFE + 0.05, rate: 0, direction: 0, spread: 180 },
+    ),
+    z(6),
+    "fx",
+  ]);
+  fx.emit(6);
+  fx.onEnd(() => destroy(fx));
+}
+
+// Landing-impact dust — see main.js's onUpdate grounded-transition check.
+// Same one-shot particles() pattern, sized small/brief/muted-gray for a
+// ground impact rather than a celebratory pickup sparkle.
+const LANDING_DUST_LIFE = 0.3;
+
+export function spawnLandingDust(x, y) {
+  const fx = add([
+    pos(x, y),
+    particles(
+      {
+        max: 8,
+        speed: [40, 90],
+        angle: [0, 360],
+        lifeTime: [0.15, LANDING_DUST_LIFE],
+        colors: [rgb(200, 195, 190), rgb(150, 145, 140)],
+        opacities: [0.7, 0],
+      },
+      { lifetime: LANDING_DUST_LIFE + 0.1, rate: 0, direction: 0, spread: 180 },
+    ),
+    z(6),
+    "fx",
+  ]);
+  fx.emit(8);
   fx.onEnd(() => destroy(fx));
 }
 

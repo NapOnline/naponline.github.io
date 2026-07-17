@@ -262,6 +262,7 @@ main.container {
   box-shadow: none;
 }
 
+.game-pause-btn,
 .game-mute-btn,
 .game-achievements-btn {
   background: none;
@@ -274,9 +275,15 @@ main.container {
   cursor: pointer;
 }
 
+.game-pause-btn:hover,
 .game-mute-btn:hover,
 .game-achievements-btn:hover {
   border-color: var(--red-accent);
+}
+
+.game-pause-btn[aria-pressed="true"] {
+  border-color: var(--red-accent);
+  color: var(--red-accent);
 }
 
 .game-canvas-frame {
@@ -322,6 +329,28 @@ main.container {
 
 .game-perfect-flash.is-active {
   animation: hit-flash 500ms ease-out;
+}
+
+/* Looping low-REDUNDANCY warning vignette (Mega Man/Contra-style "one hit
+   left" urgency cue) — unlike the one-shot hit/perfect flashes above, this
+   is toggled by plain class presence (main.js's onUpdate), not a
+   restart-the-animation reflow trick, since it just needs to stay on/off
+   for as long as the player is down to their last REDUNDANCY node. */
+.game-critical-pulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255, 45, 58, 0.5) 0%, rgba(255, 45, 58, 0) 65%);
+  opacity: 0;
+}
+
+.game-critical-pulse.is-active {
+  animation: critical-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes critical-pulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.45; }
 }
 
 .game-combo {
@@ -398,6 +427,30 @@ main.container {
   8% { opacity: 1; transform: translate(-50%, 0); }
   85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -140%); }
+}
+
+.game-pause-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(18, 16, 19, 0.85);
+  text-align: center;
+}
+
+.game-pause-overlay[hidden] {
+  display: none;
+}
+
+.game-pause-overlay__msg {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: bold;
 }
 
 .game-overlay {
@@ -903,6 +956,67 @@ dialog.recipe-dialog::backdrop {
 
 .recipe-dialog__refs a {
   font-size: 0.85rem;
+}
+
+/* Reduced motion
+   ========================================================================== */
+/* Screen shake itself is gated in JS (main.js's REDUCE_MOTION check around
+   its shake() calls). This covers the CSS-driven effects: the full-canvas
+   hit/perfect flashes get a capped opacity instead of a bright full flash
+   (a photosensitivity concern, not just vestibular motion), the toast
+   popups keep their original hold/fade timing so the information they
+   convey stays legible but lose their scale/translate "pop", and the two
+   infinite looping glows (Perfect Run overlay, critical-REDUNDANCY pulse)
+   become static instead of pulsing. */
+@media (prefers-reduced-motion: reduce) {
+  .game-hit-flash.is-active {
+    animation: hit-flash-reduced 420ms ease-out;
+  }
+
+  .game-perfect-flash.is-active {
+    animation: hit-flash-reduced 500ms ease-out;
+  }
+
+  @keyframes hit-flash-reduced {
+    0% { opacity: 0.35; }
+    100% { opacity: 0; }
+  }
+
+  .game-combo.is-active {
+    animation: combo-pop-reduced 700ms ease-out;
+  }
+
+  .game-power-toast.is-active {
+    animation: combo-pop-reduced 900ms ease-out;
+  }
+
+  @keyframes combo-pop-reduced {
+    0% { opacity: 0; transform: translate(-50%, -50%); }
+    20% { opacity: 1; transform: translate(-50%, -50%); }
+    80% { opacity: 1; transform: translate(-50%, -50%); }
+    100% { opacity: 0; transform: translate(-50%, -50%); }
+  }
+
+  .game-achievement-toast.is-active {
+    animation: achievement-toast-reduced 3200ms ease-out;
+  }
+
+  @keyframes achievement-toast-reduced {
+    0% { opacity: 0; transform: translate(-50%, 0); }
+    8% { opacity: 1; transform: translate(-50%, 0); }
+    85% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, 0); }
+  }
+
+  .game-overlay--perfect {
+    animation: none;
+    box-shadow: inset 0 0 40px rgba(255, 209, 102, 0.25);
+  }
+
+  .game-critical-pulse.is-active {
+    animation: none;
+    opacity: 0.25;
+  }
 }
 
 /* Responsive breakpoints

@@ -17,6 +17,7 @@
         </span>
       </span>
       <span class="hud-item hud-item--power" id="game-power" hidden>ROOT ACCESS <strong id="game-power-timer"></strong></span>
+      <button type="button" class="game-pause-btn" id="game-pause-btn" aria-pressed="false" aria-label="Pause game">&#9208;</button>
       <button type="button" class="game-achievements-btn" id="game-achievements-btn" aria-expanded="false" aria-label="View achievements">&#127942;</button>
       <button type="button" class="game-mute-btn" id="game-mute" aria-pressed="false" aria-label="Mute sound">&#128266;</button>
     </div>
@@ -25,10 +26,15 @@
       <canvas id="platformer-canvas" role="img" aria-label="DevOps platformer game board"></canvas>
       <div class="game-hit-flash" id="game-hit-flash"></div>
       <div class="game-perfect-flash" id="game-perfect-flash"></div>
-      <div class="game-combo" id="game-combo"></div>
-      <div class="game-achievement-toast" id="game-achievement-toast"></div>
-      <div class="game-power-toast" id="game-power-toast"></div>
+      <div class="game-critical-pulse" id="game-critical-pulse"></div>
+      <div class="game-combo" id="game-combo" aria-live="polite" aria-atomic="true"></div>
+      <div class="game-achievement-toast" id="game-achievement-toast" aria-live="polite" aria-atomic="true"></div>
+      <div class="game-power-toast" id="game-power-toast" aria-live="polite" aria-atomic="true"></div>
       <ul class="game-achievements-panel" id="game-achievements-panel" hidden></ul>
+      <div class="game-pause-overlay" id="game-pause-overlay" hidden>
+        <p class="game-pause-overlay__msg">Paused</p>
+        <button type="button" class="btn btn-outline" id="game-resume">Resume</button>
+      </div>
       <div class="game-overlay" id="game-overlay">
         <button type="button" class="btn btn-primary" id="game-start">Start Game</button>
         <p class="game-overlay__msg" id="game-message"></p>
@@ -46,7 +52,7 @@
       </div>
       <button type="button" class="touch-btn touch-btn--jump" data-action="jump" aria-label="Jump">JUMP</button>
     </div>
-    <p class="game-hint">Arrow keys / WASD to move, Space to jump, E to fire &mdash; on touch devices, use the pad above.</p>
+    <p class="game-hint">Arrow keys / WASD to move, Space to jump, E to fire, Esc to pause &mdash; on touch devices, use the pad above.</p>
   </div>
 
   <script type="module" src="{{ '/javascripts/game/main.js' | relative_url }}"></script>

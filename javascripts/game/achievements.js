@@ -20,6 +20,15 @@ export const ACHIEVEMENTS = [
   },
   { id: "first-deploy", name: "First Deploy", description: "Deploy to production for the first time." },
   { id: "iron-will", name: "Iron Will", description: "Deploy to production with only one REDUNDANCY node left." },
+  { id: "speedrunner", name: "Speedrunner", description: "Deploy to production in under 45 seconds." },
+  { id: "flagpole-ace", name: "Flagpole Ace", description: "Grab the bonus flagpole right at the top." },
+  {
+    id: "root-cause",
+    name: "Root Cause",
+    description: "Defeat 3 or more enemies during a single Root Access window.",
+  },
+  { id: "no-survivors", name: "No Survivors", description: "Defeat every enemy in the level, by any means." },
+  { id: "comeback", name: "Comeback", description: "Recover from your last REDUNDANCY node and still deploy." },
 ];
 
 export function loadUnlocked() {

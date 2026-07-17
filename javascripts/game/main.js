@@ -14,6 +14,8 @@ import {
   spawnEnemyDeathSpark,
   spawnPickupSparkle,
   spawnFloatingText,
+  spawnMuzzleFlash,
+  spawnLandingDust,
 } from "./entities.js";
 import { createCollectible, createGoal, createPole, POLE_HEIGHT } from "./collectibles.js";
 import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
@@ -43,6 +45,17 @@ const CLIMB_SPEED = 210;
 const DEATH_SHAKE_MAGNITUDE = 4;
 const FALL_DEATH_Y = LEVEL_HEIGHT + 200;
 
+// Parallax background: two copies of the same bg-subway tile scrolling
+// slower than the 1:1 foreground/camera rate, for a sense of depth (Contra/
+// Mega Man-style scrolling stages) — see buildLevel() (creation) and the
+// camX-driven reposition in onUpdate. PARALLAX_MARGIN widens the tiled
+// sprite well past LEVEL_WIDTH so it still fully covers the visible camera
+// range at every scroll factor below 1 (the slower a layer scrolls, the
+// further its own world position lags behind the camera).
+const PARALLAX_MARGIN = 2000;
+const PARALLAX_FAR_FACTOR = 0.35;
+const PARALLAX_MID_FACTOR = 0.7;
+
 // End-of-run bonus tuning (winRound()) — rewards a clean, fast run on top
 // of the existing Full Deploy/pole-climb bonuses.
 const REDUNDANCY_BONUS_PER_NODE = 100;
@@ -71,6 +84,15 @@ const PERFECT_RUN_BONUS = 1000;
 // How long the player plays its death animation before the game-over
 // overlay appears (see handlePlayerHit()/finishGameOver()).
 const DEATH_ANIM_MS = 650;
+
+// Speedrunner achievement threshold — tuned against SPEED_BONUS_DECAY_PER_SEC
+// above (that bonus tapers to 0 at 125s), so 45s reads as a genuinely fast,
+// skilled clear rather than just "didn't dawdle."
+const SPEEDRUN_THRESHOLD_MS = 45000;
+// Flagpole Ace achievement — grabbing the pole in roughly its top 10%.
+const FLAGPOLE_ACE_HEIGHT_FRAC = 0.9;
+// Root Cause achievement — kills within a single Root Access window.
+const ROOT_CAUSE_KILL_COUNT = 3;
 
 const ENEMY_SYMBOLS = { b: "bug", l: "latency-spike", p: "failed-pipeline", o: "outage" };
 
@@ -124,6 +146,17 @@ function init() {
   const comboEl = document.getElementById("game-combo");
   const perfectFlashEl = document.getElementById("game-perfect-flash");
   const powerToastEl = document.getElementById("game-power-toast");
+  const criticalPulseEl = document.getElementById("game-critical-pulse");
+  const pauseBtn = document.getElementById("game-pause-btn");
+  const pauseOverlayEl = document.getElementById("game-pause-overlay");
+  const resumeBtn = document.getElementById("game-resume");
+
+  // Read once — a live-updating media query isn't worth the complexity here,
+  // and matches how the rest of the game treats this as a fixed preference
+  // rather than something that changes mid-session. Gates the two shake()
+  // calls below; the CSS side of this (flash/toast keyframes) lives in
+  // stylesheet.css's own prefers-reduced-motion block.
+  const REDUCE_MOTION = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
   kaplay({
     canvas,
@@ -231,6 +264,25 @@ function init() {
   // reaches 0 instead of firing immediately — see handlePlayerHit()/onUpdate.
   let deathAnimMs = 0;
   let deathSourceLabel = "";
+  // Grounded-transition tracker for the landing dust puff/squash — see the
+  // onUpdate block below. Starts true so the very first frame (player
+  // already resting at spawn) doesn't read as a "landing".
+  let wasGrounded = true;
+  // Root Access kill tracking for the Root Cause achievement — reset to 0
+  // each time Root Access is picked up (see the collectible collide
+  // handler), incremented in defeatEnemy() on a "power" kill.
+  let powerKillCount = 0;
+  // Comeback achievement tracking — hitCritical latches once redundancy
+  // drops to its last node (see the HUD-sync block in onUpdate);
+  // recoveredFromCritical latches if the heal pickup is grabbed afterward
+  // (see the collectible collide handler), checked in winRound().
+  let hitCritical = false;
+  let recoveredFromCritical = false;
+  // Parallax background layers — see buildLevel() (creation) and the
+  // camX-driven reposition in onUpdate. Kept as outer-scope refs since
+  // they're repositioned every frame, same pattern as `player`.
+  let bgFar;
+  let bgMid;
 
   function buildLevel() {
     collectedCount = 0;
@@ -240,12 +292,24 @@ function init() {
     totalMinShots = 0;
     totalEnemies = 0;
 
-    // Tiled background layer, well behind everything else. buildLevel()
-    // only ever runs once (see resetRound()'s comment), so this is created
-    // exactly once too.
-    add([
-      sprite("bg-subway", { width: LEVEL_WIDTH, height: VIEW_H, tiled: true }),
-      pos(0, 0),
+    // Two-layer parallax background, well behind everything else.
+    // buildLevel() only ever runs once (see resetRound()'s comment), so
+    // these are created exactly once too. Both reuse the same bg-subway
+    // tile (there's only the one background asset) — the far layer is
+    // darkened via a runtime color() tint (same technique already used for
+    // enemy tints) so it still reads as a distinct, more distant layer
+    // rather than a duplicate. pos.x is repositioned every frame in
+    // onUpdate to scroll slower than the camera.
+    bgFar = add([
+      sprite("bg-subway", { width: LEVEL_WIDTH + PARALLAX_MARGIN * 2, height: VIEW_H, tiled: true }),
+      pos(-PARALLAX_MARGIN, 0),
+      color(90, 85, 105),
+      z(-101),
+      "background",
+    ]);
+    bgMid = add([
+      sprite("bg-subway", { width: LEVEL_WIDTH + PARALLAX_MARGIN * 2, height: VIEW_H, tiled: true }),
+      pos(-PARALLAX_MARGIN, 0),
       z(-100),
       "background",
     ]);
@@ -383,10 +447,15 @@ function init() {
     climb = null;
     hitStunMs = 0;
     shootPoseMs = 0;
+    wasGrounded = true;
+    powerKillCount = 0;
+    hitCritical = false;
+    recoveredFromCritical = false;
     playerLayer = "full";
     playerAnim = "idle";
     player.use(sprite("player", { anim: "idle" }));
     player.legs.hidden = true;
+    player.scale = vec2(1, 1);
     clearBullets();
     clearEffects();
     player.pos.x = playerSpawn.x;
@@ -395,6 +464,7 @@ function init() {
     player.vel.y = 0;
     player.opacity = 1;
     get("enemy").forEach((enemy) => {
+      const config = ENEMY_CONFIGS[enemy.enemyType];
       enemy.hidden = false;
       enemy.paused = false;
       enemy.defeated = false;
@@ -403,11 +473,19 @@ function init() {
       enemy.vel.x = 0;
       enemy.vel.y = 0;
       enemy.dir = 1;
-      enemy.shootTimer = ENEMY_CONFIGS[enemy.enemyType].shootIntervalSec ?? Infinity;
+      enemy.shootTimer = config.shootIntervalSec ?? Infinity;
       enemy.readyToFire = false;
-      enemy.health = ENEMY_CONFIGS[enemy.enemyType].health;
+      enemy.health = config.health;
       enemy.hitFlashMs = 0;
       enemy.opacity = 1;
+      // Also reset burst-cycle and frame-swap state (set by createEnemy())
+      // — otherwise a retry/respawn can resume a "burst" enemy mid-pause or
+      // leave its sprite mid-frame-swap instead of a fresh, consistent start.
+      enemy.burstMode = "move";
+      enemy.burstTimer = 0.6;
+      enemy.animTimer = 0;
+      enemy.animIndex = 0;
+      enemy.use(sprite(config.sprites[0], { width: config.width, height: config.height }));
     });
     get("collectible").forEach((item) => {
       item.hidden = false;
@@ -429,7 +507,10 @@ function init() {
       return;
     }
     highscoresEl.hidden = false;
-    highscoresEl.innerHTML = list.map((entry) => `<li>${entry.score}</li>`).join("");
+    // Coerced through Number() before interpolation — defensive only (the
+    // list only ever comes from our own submitHighScore() writes), so a
+    // hand-edited localStorage entry can't inject markup into innerHTML.
+    highscoresEl.innerHTML = list.map((entry) => `<li>${Number(entry.score) || 0}</li>`).join("");
   }
 
   // Each line is { text, isPenalty } — the shot-efficiency bonus can go
@@ -471,6 +552,12 @@ function init() {
     renderStats();
     renderBonuses(bonusLines);
     renderHighScores();
+    // The achievements popover and the start/game-over overlay are both
+    // absolutely positioned over the canvas frame and toggled independently
+    // — without this, leaving the popover open into a win/loss/restart
+    // stacks it on top of the overlay with no way to close it.
+    if (achievementsPanelEl) achievementsPanelEl.hidden = true;
+    if (achievementsBtn) achievementsBtn.setAttribute("aria-expanded", "false");
   }
 
   function hideOverlay() {
@@ -479,6 +566,7 @@ function init() {
 
   function startGame() {
     audio.initAudio();
+    setPaused(false);
     if (state.isOver || !player) {
       state.score = 0;
       state.redundancy = MAX_REDUNDANCY;
@@ -535,6 +623,36 @@ function init() {
       achievementsBtn.setAttribute("aria-expanded", String(opening));
     });
   }
+
+  // Pause freezes the whole game loop — physics, onUpdate callbacks,
+  // animations, particles — via Kaplay's own debug.paused switch (the same
+  // flag its built-in F8 debug shortcut toggles) rather than a second
+  // hand-rolled "paused" gate layered on top of state.isPlaying; the DOM
+  // overlay/button just mirror that single source of truth.
+  function setPaused(value) {
+    if (value && !state.isPlaying) return;
+    debug.paused = value;
+    if (pauseOverlayEl) pauseOverlayEl.hidden = !value;
+    if (pauseBtn) pauseBtn.setAttribute("aria-pressed", String(value));
+    // Also close the achievements popover, same reasoning as showOverlay()
+    // — two independently-toggled overlays stacking on the canvas at once.
+    if (value && achievementsPanelEl) {
+      achievementsPanelEl.hidden = true;
+      if (achievementsBtn) achievementsBtn.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  if (pauseBtn) pauseBtn.addEventListener("click", () => setPaused(!debug.paused));
+  if (resumeBtn) resumeBtn.addEventListener("click", () => setPaused(false));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.code !== "Escape" && e.code !== "KeyP") return;
+    if (document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement) return;
+    if (!overlayEl.hidden) return; // don't fight the Start/Try Again handler
+    if (!state.isPlaying && !debug.paused) return;
+    e.preventDefault();
+    setPaused(!debug.paused);
+  });
 
   buildLevel();
   if (bestEl) bestEl.textContent = getTopScore();
@@ -654,6 +772,12 @@ function init() {
       // runs ahead of the normal !state.isPlaying gate so the animation
       // isn't frozen the instant state flips to LOSE.
       deathSourceLabel = sourceLabel;
+      // A fatal fall can leave the player well below the visible viewport
+      // (the camera's Y never follows the player, and FALL_DEATH_Y — see
+      // its own comment — only triggers ~200px past the bottom edge of the
+      // frame) — without this, the death-flail anim below would play
+      // entirely off-screen and never be seen.
+      if (player.pos.y > VIEW_H) player.pos.y = VIEW_H - 60;
       deathAnimMs = DEATH_ANIM_MS;
       shootPoseMs = 0;
       playerLayer = "full";
@@ -692,7 +816,7 @@ function init() {
     const config = ENEMY_CONFIGS[enemy.enemyType];
     spawnEnemyFragments(enemy, config);
     spawnEnemyDeathSpark(enemy.pos.x + config.width / 2, enemy.pos.y + config.height / 2);
-    shake(DEATH_SHAKE_MAGNITUDE);
+    if (!REDUCE_MOTION) shake(DEATH_SHAKE_MAGNITUDE);
     enemy.defeated = true;
     enemy.hidden = true;
     enemy.paused = true;
@@ -703,6 +827,12 @@ function init() {
     // many shots were fired — bulletKillCount only reaches totalEnemies if
     // every single enemy went down to gunfire, with no stomps/Root Access.
     if (method === "bullet") bulletKillCount += 1;
+    // Root Cause achievement — powerKillCount is reset to 0 each time Root
+    // Access is picked up (see the collectible collide handler).
+    if (method === "power") {
+      powerKillCount += 1;
+      if (powerKillCount >= ROOT_CAUSE_KILL_COUNT) announceUnlocks(["root-cause"]);
+    }
 
     // Kill-streak combo: chaining kills within COMBO_WINDOW_MS of each
     // other escalates a bonus, awarded immediately at each extension (not
@@ -805,6 +935,11 @@ function init() {
     if (totalEnemies > 0 && bulletKillCount >= totalEnemies) unlockIds.push("sharpshooter");
     if (isPerfect) unlockIds.push("perfect-run");
     if (state.redundancy === 1) unlockIds.push("iron-will");
+    if (state.elapsedMs < SPEEDRUN_THRESHOLD_MS) unlockIds.push("speedrunner");
+    // No Survivors — every enemy defeated by any method, unlike the
+    // bullet-only Sharpshooter check above.
+    if (totalEnemies > 0 && defeatedEnemyCount >= totalEnemies) unlockIds.push("no-survivors");
+    if (recoveredFromCritical) unlockIds.push("comeback");
     announceUnlocks(unlockIds);
 
     let message = isPerfect ? "PERFECT RUN — flawless deploy!" : "Deployed to production!";
@@ -819,7 +954,7 @@ function init() {
       // it stays in step with the game loop rather than a raw setTimeout.
       audio.playPerfectWin();
       triggerPerfectFlash();
-      shake(12);
+      if (!REDUCE_MOTION) shake(12);
       wait(0.5, () => {
         reveal();
         overlayEl.classList.add("game-overlay--perfect");
@@ -857,6 +992,12 @@ function init() {
     } else {
       powerEl.hidden = true;
     }
+    // Low-REDUNDANCY warning pulse — see .game-critical-pulse in
+    // stylesheet.css. Latches hitCritical for the Comeback achievement too
+    // (see the collectible collide handler's heal branch/winRound()).
+    const isCritical = state.isPlaying && state.redundancy === 1;
+    if (criticalPulseEl) criticalPulseEl.classList.toggle("is-active", isCritical);
+    if (isCritical) hitCritical = true;
 
     // Runs even though state.state has already flipped to LOSE (so the
     // !state.isPlaying gate right below would otherwise freeze it) — plays
@@ -880,6 +1021,32 @@ function init() {
 
     player.opacity = state.isHitInvincible ? (Math.floor(state.hitTimer / 90) % 2 === 0 ? 1 : 0.35) : 1;
     player.legs.opacity = player.opacity;
+
+    // Jump/land squash-and-stretch — jump takeoff sets a stretched scale
+    // (see onButtonPress("jump", ...)) and landing below sets a squashed
+    // one; both decay back toward (1,1) here every frame regardless of
+    // climb/hit-stun state, same idiom as the manual dt()-driven fx
+    // countdowns in entities.js (no tween() used anywhere in this codebase).
+    if (player.scale.x !== 1 || player.scale.y !== 1) {
+      const t = Math.min(1, dt() * 12);
+      player.scale.x += (1 - player.scale.x) * t;
+      player.scale.y += (1 - player.scale.y) * t;
+      if (Math.abs(player.scale.x - 1) < 0.01 && Math.abs(player.scale.y - 1) < 0.01) {
+        player.scale.x = 1;
+        player.scale.y = 1;
+      }
+    }
+
+    // Landing dust puff + squash, on the airborne->grounded transition only
+    // (not a sustained grounded check, or it'd fire every frame standing
+    // still). Skipped while climbing the bonus pole — that's a scripted
+    // slide down to the goal, not a real landing.
+    const isGroundedNow = player.isGrounded();
+    if (isGroundedNow && !wasGrounded && !climb) {
+      spawnLandingDust(player.pos.x + 23, player.pos.y + PLAYER_HEIGHT - 4);
+      player.scale = vec2(1.3, 0.75);
+    }
+    wasGrounded = isGroundedNow;
 
     if (climb) {
       updateClimb();
@@ -949,6 +1116,13 @@ function init() {
     });
 
     const camX = Math.min(Math.max(player.pos.x, VIEW_W / 2), LEVEL_WIDTH - VIEW_W / 2);
+    // Parallax: each layer's own world pos.x lags behind camX by its scroll
+    // factor, so on-screen it appears to move slower than the 1:1
+    // foreground (screenX = layer.pos.x - camX = -PARALLAX_MARGIN +
+    // camX*(1-factor), which nets out to camX*-factor plus the fixed
+    // margin offset — smaller factor reads as further away).
+    bgFar.pos.x = -PARALLAX_MARGIN + camX * (1 - PARALLAX_FAR_FACTOR);
+    bgMid.pos.x = -PARALLAX_MARGIN + camX * (1 - PARALLAX_MID_FACTOR);
 
     get("bullet").forEach((bullet) => {
       bullet.pos.x += bullet.dir * BULLET_SPEED * dt();
@@ -972,6 +1146,7 @@ function init() {
   onButtonPress("jump", () => {
     if (state.isPlaying && player && !climb && hitStunMs <= 0 && player.isGrounded()) {
       player.jump(JUMP_FORCE);
+      player.scale = vec2(0.75, 1.3);
       audio.playJump();
     }
   });
@@ -984,7 +1159,10 @@ function init() {
     // Offsets tuned against the "shoot" pose's (frames 28-29) muzzle-flash
     // position, so the bullet appears to leave the gun in both facing
     // directions, grounded or airborne.
-    createBullet("player", player.pos.x + (dir > 0 ? 40 : 5), player.pos.y + 24, dir);
+    const muzzleX = player.pos.x + (dir > 0 ? 40 : 5);
+    const muzzleY = player.pos.y + 24;
+    createBullet("player", muzzleX, muzzleY, dir);
+    spawnMuzzleFlash(muzzleX, muzzleY);
     audio.playShoot();
     state.shotsFired += 1;
   });
@@ -1045,7 +1223,14 @@ function init() {
       spawnPickupSparkle(fxX, fxY, [rgb(240, 181, 65), rgb(255, 238, 131)], { count: 24 });
       spawnFloatingText(fxX, fxY, "+50", [255, 238, 131]);
       triggerPowerToast("ROOT ACCESS!");
+      // Root Cause achievement — see defeatEnemy(); each window starts a
+      // fresh count.
+      powerKillCount = 0;
     } else if (item.collectibleType === "redundancy") {
+      // Comeback achievement — only counts if this heal follows having
+      // actually been down to the last node (see the HUD-sync block in
+      // onUpdate that latches hitCritical), not just any heal pickup.
+      if (hitCritical) recoveredFromCritical = true;
       state.restoreRedundancy(1);
       state.addScore(25);
       audio.playCollectRedundancy();
@@ -1065,6 +1250,9 @@ function init() {
     pole.climbed = true;
     const grabHeight = Math.max(0, Math.min(POLE_HEIGHT, pole.poleBottom - playerObj.pos.y));
     climb = { poleX: pole.pos.x, poleBottom: pole.poleBottom, grabHeight };
+    // Flagpole Ace — an immediate unlock at the moment of the grab (like
+    // combo-master), not deferred to winRound().
+    if (grabHeight >= POLE_HEIGHT * FLAGPOLE_ACE_HEIGHT_FRAC) announceUnlocks(["flagpole-ace"]);
     // Riding the pole down is a scripted celebration, not a hazard course —
     // shield the player for the whole slide so a stray enemy/bullet can't
     // interrupt it.
