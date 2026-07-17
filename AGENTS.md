@@ -92,8 +92,11 @@ vendored from):
   screen/monitor design) were replaced with original AI-generated pixel art — see the git history
   around those changes for the generation pipeline (SDXL via a local ComfyUI, background-removed
   and pixelated with a small Python script — `~/comfy-projects/devops-platformer-enemies/` on the
-  machine that generated them — not hand-drawn). `collectible-cash.png`/`collectible-redundancy.png`
-  are hand-drawn flat icons, not part of that AI-generated batch. `player-torso.png`/
+  machine that generated them — not hand-drawn). `collectible-cash.png` is a hand-drawn flat icon,
+  not part of that AI-generated batch. `collectible-redundancy.png` is "Hard Drive" by Pong Man
+  (CC0, OpenGameArt, https://opengameart.org/content/hard-drive), used at its native 32x32 —
+  unlike the other curated sprites above it isn't from either CC0 itch.io pack, so if it's ever
+  swapped again, note the source here too. `player-torso.png`/
   `player-legs.png` are derived crops of the existing `player.png` sheet (see entities.js's
   comments), not new art. Likewise `enemy-<type>-fragment-0..3.png` are mechanical 2x2-grid crops
   of each enemy's existing `-1.png` idle frame (see `dev/generate-enemy-fragments.sh`), used for

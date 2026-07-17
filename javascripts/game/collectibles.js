@@ -5,7 +5,7 @@ import { TILE_SIZE } from "./level.js";
 const COLLECTIBLE_SPRITES = {
   "root-access": { sprite: "powerup-root-access", width: 30, height: 16 },
   cash: { sprite: "collectible-cash", width: 28, height: 20 },
-  redundancy: { sprite: "collectible-redundancy", width: 24, height: 24 },
+  redundancy: { sprite: "collectible-redundancy", width: 32, height: 32 },
 };
 
 export function createCollectible(type, x, y) {
