@@ -767,10 +767,18 @@ dialog.story-dialog::backdrop {
   gap: 10px;
 }
 
+/* A fixed width+height box with object-fit: contain, not height-only
+   scaling — the three collectible sprites have very different native
+   aspect ratios (powerup-root-access.png is a tiny, elongated 13x7 next
+   to collectible-cash.png's 28x20 and collectible-redundancy.png's
+   32x32), so scaling by height alone left the key looking like a thin
+   sliver next to the other two. This keeps all three in the same visual
+   footprint instead. */
 .field-kit__sprite {
   flex-shrink: 0;
+  width: 40px;
   height: 40px;
-  width: auto;
+  object-fit: contain;
   image-rendering: pixelated;
 }
 

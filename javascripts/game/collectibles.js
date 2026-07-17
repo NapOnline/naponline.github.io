@@ -3,7 +3,13 @@
 import { TILE_SIZE } from "./level.js";
 
 const COLLECTIBLE_SPRITES = {
-  "root-access": { sprite: "powerup-root-access", width: 30, height: 16 },
+  // powerup-root-access.png's native art is a tiny 13x7 — the smallest
+  // source sprite of the three by far. Rendering it at the same height as
+  // collectible-cash.png (20) instead of a further-shrunk 16 keeps its
+  // visual weight closer to the other two pickups rather than reading as
+  // a thin sliver next to them (width follows from preserving its 13:7
+  // aspect ratio, not an arbitrary choice).
+  "root-access": { sprite: "powerup-root-access", width: 37, height: 20 },
   cash: { sprite: "collectible-cash", width: 28, height: 20 },
   redundancy: { sprite: "collectible-redundancy", width: 32, height: 32 },
 };
