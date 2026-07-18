@@ -2,6 +2,8 @@
 // `global: true` (see main.js), so sprite()/pos()/area()/body()/add()/dt()
 // etc. are ambient globals — the standard way Kaplay is used.
 
+import { patrolBehavior, burstBehavior, erraticBehavior, turretBehavior } from "./entities-behaviors.js";
+
 // Player sheet is a uniform 8x8 grid of 45x45 frames (see main.js's
 // loadSprite call). Frame index = row*8 + col. Row 0 col 0 is a clean
 // standing pose (its upper portion is cropped into assets/player-torso.png
@@ -107,14 +109,6 @@ export const ENEMY_CONFIGS = {
   },
 };
 
-const ANIM_SWAP_SEC = 0.26;
-
-// How long before an "outage" turret fires that it starts telegraphing —
-// see updateEnemy()'s turret branch below. Previously readyToFire flipped
-// with zero visible warning; this gives the player a fair reaction window,
-// same idea as a Mega Man/Contra turret flashing before it shoots.
-const TURRET_TELEGRAPH_SEC = 0.3;
-
 // A bare area() defaults to the active sprite's full render rect — for the
 // player that's the whole 45x45 cell, which is roughly twice the width and
 // height of the actual character silhouette (idle bbox is ~x15-35,y15-45;
@@ -156,6 +150,14 @@ export function createPlayer(x, y) {
 
 export function createEnemy(type, x, y) {
   const config = ENEMY_CONFIGS[type];
+
+  const behaviorComponent =
+    config.behavior === "patrol" ? patrolBehavior(config) :
+    config.behavior === "burst" ? burstBehavior(config) :
+    config.behavior === "erratic" ? erraticBehavior(config) :
+    config.behavior === "turret" ? turretBehavior(config) :
+    {};
+
   const enemy = add([
     sprite(config.sprites[0], { width: config.width, height: config.height }),
     pos(x, y),
@@ -178,90 +180,28 @@ export function createEnemy(type, x, y) {
       burstTimer: 0.6,
       shootTimer: config.shootIntervalSec ?? Infinity,
       readyToFire: false,
-      // Bullets chip this down by 1 (see main.js's bullet-enemy collision
-      // handler); a stomp or Root-Access touch bypasses it entirely and
-      // defeats in one hit regardless. hitFlashMs drives a brief opacity
-      // blink on a non-lethal hit — see updateEnemy()'s decay below.
       health: config.health,
       hitFlashMs: 0,
+      ...behaviorComponent,
     },
   ]);
 
   enemy.onUpdate(() => {
-    updateEnemy(enemy, config);
+    // Shared state: hit flash decay
+    if (enemy.hitFlashMs > 0) {
+      enemy.hitFlashMs -= dt() * 1000;
+      enemy.opacity = enemy.hitFlashMs > 0 && Math.floor(enemy.hitFlashMs / 40) % 2 === 0 ? 0.35 : 1;
+    }
+    // Behavior update is now a component method
+    if (enemy.update) enemy.update();
   });
 
   return enemy;
 }
 
-function swapFrame(enemy, config, deltaTime) {
-  enemy.animTimer += deltaTime;
-  if (enemy.animTimer >= ANIM_SWAP_SEC) {
-    enemy.animTimer = 0;
-    enemy.animIndex = 1 - enemy.animIndex;
-    enemy.use(sprite(config.sprites[enemy.animIndex], { width: config.width, height: config.height }));
-  }
-}
-
 // Duration of the blink triggered by a non-lethal bullet hit (see
 // main.js's bullet-enemy collision handler, which sets enemy.hitFlashMs).
 export const ENEMY_HIT_FLASH_MS = 220;
-
-function updateEnemy(enemy, config) {
-  const deltaTime = dt();
-
-  if (enemy.hitFlashMs > 0) {
-    enemy.hitFlashMs -= deltaTime * 1000;
-    enemy.opacity = enemy.hitFlashMs > 0 && Math.floor(enemy.hitFlashMs / 40) % 2 === 0 ? 0.35 : 1;
-  }
-
-  let speed = config.speed;
-
-  if (config.behavior === "turret") {
-    enemy.vel.x = 0;
-    swapFrame(enemy, config, deltaTime);
-    enemy.shootTimer -= deltaTime;
-    if (enemy.shootTimer <= TURRET_TELEGRAPH_SEC) {
-      // Pulse the tint toward a warning color as the shot approaches — the
-      // hit-flash blink (see the block above) already uses opacity for "I
-      // was just hit," so this uses color instead to stay visually distinct.
-      const elapsed = TURRET_TELEGRAPH_SEC - Math.max(0, enemy.shootTimer);
-      const pulse = Math.abs(Math.sin(elapsed * 25));
-      enemy.color = rgb(
-        lerp(config.tint[0], 255, pulse),
-        lerp(config.tint[1], 70, pulse),
-        lerp(config.tint[2], 50, pulse),
-      );
-    } else if (enemy.hitFlashMs <= 0) {
-      enemy.color = rgb(config.tint[0], config.tint[1], config.tint[2]);
-    }
-    if (enemy.shootTimer <= 0) {
-      enemy.shootTimer = config.shootIntervalSec;
-      enemy.readyToFire = true;
-      enemy.color = rgb(config.tint[0], config.tint[1], config.tint[2]);
-    }
-    return;
-  }
-
-  if (config.behavior === "burst") {
-    enemy.burstTimer -= deltaTime;
-    if (enemy.burstTimer <= 0) {
-      enemy.burstMode = enemy.burstMode === "move" ? "pause" : "move";
-      enemy.burstTimer = enemy.burstMode === "move" ? 0.5 : 0.9;
-    }
-    speed = enemy.burstMode === "move" ? config.speed : 0;
-  } else if (config.behavior === "erratic") {
-    if (Math.random() < 0.004) enemy.dir *= -1;
-  }
-
-  if (enemy.pos.x <= enemy.minX) enemy.dir = 1;
-  if (enemy.pos.x >= enemy.maxX) enemy.dir = -1;
-
-  enemy.vel.x = enemy.dir * speed;
-  if (speed > 0) swapFrame(enemy, config, deltaTime);
-  // Source art faces left by default, so flip when patrolling right.
-  enemy.flipX = enemy.dir > 0;
-}
 
 export const BULLET_SPEED = 320;
 
@@ -277,6 +217,7 @@ export function createBullet(owner, x, y, dir) {
     z(5),
     "bullet",
     isPlayerBullet ? "bullet-player" : "bullet-enemy",
+    offscreen({ destroy: true, distance: 80 }),
     { dir, ownerTag: owner },
   ]);
 }
