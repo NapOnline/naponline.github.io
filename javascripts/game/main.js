@@ -1118,7 +1118,11 @@ function init() {
 
     get("bullet").forEach((bullet) => {
       bullet.pos.x += bullet.dir * BULLET_SPEED * dt();
-      // offscreen({ destroy: true }) component handles despawn automatically
+      // All bullets despawn if they leave the level bounds
+      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40) {
+        destroy(bullet);
+      }
+      // Player bullets also despawn if they leave the camera view (see createBullet)
     });
 
     setCamPos(camX, VIEW_H / 2);

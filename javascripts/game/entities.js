@@ -270,16 +270,21 @@ export const BULLET_SPEED = 320;
 // outright once they hit something or leave the level bounds.
 export function createBullet(owner, x, y, dir) {
   const isPlayerBullet = owner === "player";
-  return add([
+  const components = [
     sprite(isPlayerBullet ? "bullet-player" : "bullet-enemy"),
     pos(x, y),
     area(),
     z(5),
     "bullet",
     isPlayerBullet ? "bullet-player" : "bullet-enemy",
-    offscreen({ destroy: true, distance: 80 }),
-    { dir, ownerTag: owner },
-  ]);
+  ];
+  // Only player bullets despawn based on camera position; enemy bullets (turrets)
+  // have limited range already and should only despawn on level bounds (see main.js)
+  if (isPlayerBullet) {
+    components.push(offscreen({ destroy: true, distance: 80 }));
+  }
+  components.push({ dir, ownerTag: owner });
+  return add(components);
 }
 
 const FRAGMENT_LIFE_MS = 500;
