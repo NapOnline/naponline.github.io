@@ -179,16 +179,46 @@ build environment actually runs.
 2. Wait for it to exit 0 (all tests pass)
 3. Only then create a commit and push
 
-**Do not commit or push on a failing test.** The test suite is the gate for catching the class of
-bug that shipped in this session: undefined Kaplay globals at runtime (visible only in a real
-browser, not caught by syntax checks).
+**Do not commit or push on a failing test.** The test suite is the gate for catching runtime bugs
+that static checks miss.
 
-`dev/test.sh` is a single command (see README.md's "Testing" section) that runs:
-- Jekyll build with strict front matter checking
-- Syntax check on all game JS files
-- Browser smoke test via Playwright (loads the game page, checks for errors/exceptions,
-  confirms the start button works, briefly tests input)
+`dev/test.sh` is a single comprehensive command (see README.md's "Testing" section) that runs:
 
-See `dev/serve.sh` and `dev/tests/smoke.mjs` for details. This is especially critical for refactors
-that extract logic into new modules — static checks cannot catch an undefined implicit global that
-only fires when the module is actually imported and executed in the browser context.
+1. **Jekyll build** with strict front matter checking
+2. **Syntax check** on all game JS files
+3. **Comprehensive browser test suite** (7 separate test modules via Playwright):
+   - `smoke.mjs` — fast fail-fast gate; page loads, start button works, no console errors
+   - `mechanics.mjs` — player movement/jumping, all 4 enemy behaviors, combat (bullet/stomp/power),
+     collectibles, pole climb, damage/death, pause, HUD sync, and a regression test for the
+     turret bullet despawn bug fixed this session
+   - `achievements.mjs` — all 11 achievement unlock conditions (pacifist, sharpshooter, combo-master,
+     perfect-run, iron-will, speedrunner, flagpole-ace, root-cause, no-survivors, comeback,
+     first-deploy) plus persistence across reloads
+   - `scoring.mjs` — bonus formula verification (redundancy, no-power, no-heal, speed-decay,
+     shot-efficiency-taper, pacifist, perfect-run, combo)
+   - `ui.mjs` — achievements panel toggle, mute button, pause button/Escape shortcut, touch controls,
+     canvas resize, reduced-motion media query, overlay stacking
+   - `persistence.mjs` — high score list persistence/sorting/truncation, achievement persistence,
+     mute preference persistence
+   - `playthrough.mjs` — one real, end-to-end playthrough with actual keyboard input and game physics
+     (loose assertions; proving level is genuinely completable, not scripted)
+
+See `dev/serve.sh`, `dev/tests/helpers.mjs`, and individual test files in `dev/tests/` for details.
+
+### Dev-only debug hook (test infrastructure)
+
+`javascripts/game/main.js` contains a development-only debug API exposed at `window.__gameDebug`
+when the test harness injects `window.__NAP_TEST_HOOK__ = true` before page load. This gate ensures
+it is **completely unreachable in production** — never set by real users or the live site. The hook
+is used exclusively by the test runner to:
+- Snapshot game state (`getState()`)
+- Mutate state for scenario setup (`setState(patch)`)
+- Teleport player (`teleportPlayer()`)
+- Defeat enemies (`killAllEnemies()`)
+- Collect items (`collectAllItems()`)
+- Direct access to real game functions (`winRound`, `defeatEnemy`, `announceUnlocks`, etc.)
+
+This allows tests to achieve deterministic, reliable coverage of rare achievement conditions
+(Perfect Run, Root Cause, Iron Will, Comeback) without relying on flaky real-input scripting against
+randomness (e.g., the erratic enemy's unseeded direction flips). The hook is commented as such in
+`main.js` — do not mistake it for dead code or remove it.

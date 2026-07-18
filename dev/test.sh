@@ -57,23 +57,54 @@ fi
 echo "✓ All game JS files have valid syntax"
 echo ""
 
-# 4. Playwright smoke test
-echo "[4/4] Running browser smoke test..."
+# 4. Browser test suite (smoke + mechanics + achievements + scoring + UI + persistence + playthrough)
+echo "[4/4] Running comprehensive browser test suite..."
 if ! npm --prefix dev/tests install > /dev/null 2>&1; then
   echo "✗ FAILED: Could not install npm dependencies"
   exit 1
 fi
+echo ""
 
-if ! node dev/tests/smoke.mjs; then
+# Collect results from all test files
+test_files=(
+  "dev/tests/smoke.mjs"
+  "dev/tests/mechanics.mjs"
+  "dev/tests/achievements.mjs"
+  "dev/tests/scoring.mjs"
+  "dev/tests/ui.mjs"
+  "dev/tests/persistence.mjs"
+  "dev/tests/playthrough.mjs"
+)
+
+failed_tests=()
+passed_count=0
+
+for test_file in "${test_files[@]}"; do
+  test_name=$(basename "$test_file" .mjs)
+  echo "  → Running $test_name..."
+  if node "$test_file" 2>&1; then
+    passed_count=$((passed_count + 1))
+  else
+    failed_tests+=("$test_name")
+  fi
   echo ""
-  echo "✗ FAILED: Browser smoke test failed"
+done
+
+echo "════════════════════════════════════════════════════════════════"
+
+if [ ${#failed_tests[@]} -eq 0 ]; then
+  echo "  ✓ ALL TESTS PASSED (${#test_files[@]} suites)"
+  echo "════════════════════════════════════════════════════════════════"
+  echo ""
+  echo "  Safe to commit and push."
+  echo ""
+  exit 0
+else
+  echo "  ✗ ${#failed_tests[@]} TEST SUITE(S) FAILED:"
+  for test in "${failed_tests[@]}"; do
+    echo "    - $test"
+  done
+  echo "════════════════════════════════════════════════════════════════"
+  echo ""
   exit 1
 fi
-echo ""
-
-echo "════════════════════════════════════════════════════════════════"
-echo "  ✓ ALL TESTS PASSED"
-echo "════════════════════════════════════════════════════════════════"
-echo ""
-echo "  Safe to commit and push."
-echo ""

@@ -58,7 +58,7 @@ bundle exec github-pages versions
 
 ## Testing
 
-Before committing changes to the game or site code, run the pre-commit test suite:
+Before committing changes to the game or site code, run the comprehensive pre-commit test suite:
 
 ```sh
 dev/test.sh
@@ -68,14 +68,25 @@ This runs (in order):
 1. **Server check** — starts/verifies a fresh `jekyll serve` instance on port 4000
 2. **Jekyll build** — checks for Liquid/front-matter errors with `--strict_front_matter`
 3. **JavaScript syntax** — runs `node --check` on all game files
-4. **Browser smoke test** — launches headless Chromium, navigates to the game, and catches runtime errors (like undefined globals) that static checks can't see
+4. **Comprehensive browser test suite** — 7 test modules via headless Chromium + Playwright:
+   - Smoke test (page loads, no console errors)
+   - Mechanics (player movement, enemy AI, combat, collectibles, pause, HUD sync, turret regression)
+   - Achievements (all 11 unlock conditions and persistence)
+   - Scoring (bonus formula verification)
+   - UI (panel toggles, mute/pause buttons, canvas resize, touch controls)
+   - Persistence (high scores, achievements, preferences)
+   - Playthrough (one real end-to-end game with actual input)
 
 The suite exits 0 only if all pass. Do not commit on a failing test.
+
+**Runtime:** ~1–3 minutes for the full suite (includes real browser launches, physics simulation, and full playthrough).
 
 **Individual commands** (rarely needed):
 - `dev/serve.sh` — start/manage the local Jekyll server
 - `dev/serve.sh stop` — stop it cleanly
-- `npm --prefix dev/tests install && node dev/tests/smoke.mjs` — run just the browser test
+- `npm --prefix dev/tests install && node dev/tests/smoke.mjs` — run just the smoke test
+- `node dev/tests/mechanics.mjs` — run mechanics tests only
+- See `dev/tests/*.mjs` for other individual modules
 
 **Node/Playwright note:** The test suite is dev-only (never shipped with the site). It requires Node + Playwright, both already available on this host. `dev/tests/node_modules/` is gitignored.
 

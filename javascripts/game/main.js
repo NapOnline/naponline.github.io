@@ -1246,6 +1246,105 @@ function init() {
     if (!state.isPlaying || climb) return;
     winRound(0, "");
   });
+
+  // ============================================================================
+  // Dev-only debug hook for testing (completely inert without __NAP_TEST_HOOK__)
+  // ============================================================================
+  // Test harness injects window.__NAP_TEST_HOOK__ = true before page load via
+  // page.addInitScript() before main.js runs. This gate ensures the hook is
+  // unreachable without explicit test setup — it never affects production.
+  // The test runner uses page.evaluate() to invoke these functions directly.
+  if (window.__NAP_TEST_HOOK__ === true) {
+    window.__gameDebug = {
+      // Snapshot game state (used by test assertions)
+      getState: () => ({
+        score: state.score,
+        redundancy: state.redundancy,
+        state: state.state,
+        isPowered: state.isPowered,
+        isHitInvincible: state.isHitInvincible,
+        isPlaying: state.isPlaying,
+        isOver: state.isOver,
+        powerTimer: state.powerTimer,
+        hitTimer: state.hitTimer,
+        shotsFired: state.shotsFired,
+        shotsHit: state.shotsHit,
+        usedPower: state.usedPower,
+        usedHeal: state.usedHeal,
+        tookDamage: state.tookDamage,
+        elapsedMs: state.elapsedMs,
+        accuracyPercent: state.accuracyPercent,
+        defeatedEnemyCount,
+        totalEnemies,
+        collectedCash,
+        totalCash,
+        collectedCount,
+        totalCollectibles,
+        totalMinShots,
+        comboCount,
+      }),
+
+      // Mutate game state (used to set up test scenarios)
+      setState: (patch) => {
+        Object.assign(state, patch);
+      },
+
+      // Mutate closure-scoped run counters not part of `state` (comboCount,
+      // comboTimerMs) — needed because these drive combo-related bonuses/
+      // achievements but aren't GameState fields.
+      setComboCount: (value) => {
+        comboCount = value;
+        comboTimerMs = value > 0 ? COMBO_WINDOW_MS : 0;
+      },
+
+      // Get live enemy data
+      getEnemies: () => {
+        return get("enemy").map((e) => ({
+          enemyType: e.enemyType,
+          pos: { x: e.pos.x, y: e.pos.y },
+          health: e.health,
+          defeated: e.defeated,
+        }));
+      },
+
+      // Fast teleport for scenario setup
+      teleportPlayer: (x, y) => {
+        if (player) {
+          player.pos.x = x;
+          player.pos.y = y;
+          player.vel.x = 0;
+          player.vel.y = 0;
+        }
+      },
+
+      // Defeat all enemies (used in victory scenario tests)
+      killAllEnemies: (method = "bullet") => {
+        get("enemy").forEach((enemy) => {
+          if (!enemy.defeated) defeatEnemy(enemy, 150, method);
+        });
+      },
+
+      // Collect all collectibles
+      collectAllItems: () => {
+        get("collectible").forEach((item) => {
+          if (!item.collected) {
+            item.collected = true;
+            item.hidden = true;
+            item.pos.x = -9999;
+            collectedCount += 1;
+            if (item.collectibleType === "cash") collectedCash += 1;
+            state.addScore(item.collectibleType === "root-access" ? 50 : item.collectibleType === "redundancy" ? 25 : 10);
+          }
+        });
+      },
+
+      // Direct function references (for calling real game logic)
+      winRound,
+      defeatEnemy,
+      announceUnlocks,
+      resetRound,
+    };
+  }
 }
 
 if (document.readyState === "loading") {
