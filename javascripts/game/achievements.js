@@ -21,7 +21,7 @@ export const ACHIEVEMENTS = [
   { id: "first-deploy", name: "First Deploy", description: "Deploy to production for the first time." },
   { id: "iron-will", name: "Iron Will", description: "Deploy to production with only one REDUNDANCY node left." },
   { id: "speedrunner", name: "Speedrunner", description: "Deploy to production in under 45 seconds." },
-  { id: "flagpole-ace", name: "Flagpole Ace", description: "Grab the bonus flagpole right at the top." },
+  { id: "flagpole-ace", name: "Rack Climber", description: "Grab the signal boost at the very top of the rack." },
   {
     id: "root-cause",
     name: "Root Cause",

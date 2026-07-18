@@ -7,6 +7,11 @@ export const STATES = Object.freeze({
 
 export const MAX_REDUNDANCY = 3;
 
+// Below this remaining powerTimer, isPowerLow flips true — drives the
+// "about to expire" warning blink in main.js's onUpdate/HUD sync, same idea
+// as the low-redundancy critical-pulse but for the Root Access buff.
+const POWER_LOW_THRESHOLD_MS = 2000;
+
 // Power (ROOT ACCESS) and post-hit invincibility are independent countdowns
 // rather than sub-states — a hit taken mid-buff, or a buff picked up mid
 // grace-period, should never fight over which "state" the game is in.
@@ -92,6 +97,10 @@ export class GameState {
 
   get isPowered() {
     return this.powerTimer > 0;
+  }
+
+  get isPowerLow() {
+    return this.isPowered && this.powerTimer <= POWER_LOW_THRESHOLD_MS;
   }
 
   get isHitInvincible() {

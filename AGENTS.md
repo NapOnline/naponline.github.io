@@ -56,25 +56,30 @@ recipe's actual photo — don't reintroduce that bug.
 ## Game code boundary
 
 The hero game is a 2D side-scroller ("DevOps engineer" runs/jumps through a level fighting Bugs,
-Latency Spikes, and Failed Pipelines, collecting Commits and a Root Access power-up, to reach a
-"Deploy to Production" goal). It lives under `javascripts/game/` as ES modules built on **Kaplay**
+Latency Spikes, Failed Pipelines, Outages, DDoS Bots, and Stack Overflows, collecting Commits and a
+Root Access power-up, to reach a "Deploy to Production" goal). It lives under `javascripts/game/`
+as ES modules built on **Kaplay**
 (`javascripts/vendor/kaplay.mjs`, npm `kaplay` package, MIT + a no-AI-training-use clause — see
 `javascripts/vendor/KAPLAY_LICENSE.txt` for the exact text, pinned at the version that file was
 vendored from):
 
 - `level.js` — the level as a hand-authored ASCII map (array of equal-length strings) plus the
   `tiles` symbol legend, consumed via Kaplay's `addLevel()`. `#` solid ground/platform, `@` player
-  spawn, `b`/`l`/`p` enemy spawns (bug/latency-spike/failed-pipeline), `c` commit collectible, `k`
-  Root Access key, `g` goal terminal.
+  spawn, `b`/`l`/`p`/`o`/`d`/`s` enemy spawns (bug/latency-spike/failed-pipeline/outage turret/
+  ddos-bot gunner/stack-overflow turret), `c` commit collectible, `k` Root Access key, `F` bonus
+  server rack, `g` goal terminal.
 - `entities.js` — `createPlayer()`/`createEnemy()` factory functions building Kaplay game objects
   (`sprite()`, `pos()`, `area()`, `body()`, plus custom tags/state). `ENEMY_CONFIGS` is the
   per-type data table (sprite frames, color tint, patrol speed, behavior). `PLAYER_ANIMS` defines
   the player's idle/run/jump frame indices into its sliced spritesheet.
 - `collectibles.js` — `createCollectible()`/`createGoal()` factories for the commit/Root-Access
   pickups and the goal terminal (non-solid `area()` triggers, no `body()`).
-- `state.js` — the `GameState` finite state machine (`READY → PLAYING → POWERED → WIN/LOSE`).
-  Engine-agnostic — carried over unchanged from the previous Pac-Man version and drives the HUD/
-  overlay DOM elements exactly the same way regardless of what's happening inside the canvas.
+- `state.js` — the `GameState` finite state machine (`READY → PLAYING → WIN/LOSE`). "Powered"
+  (Root Access) and post-hit invincibility are deliberately NOT sub-states — they're independent
+  `powerTimer`/`hitTimer` countdowns (`isPowered`/`isPowerLow`/`isHitInvincible` getters) so a hit
+  taken mid-buff never has to fight over which "state" the game is in. Engine-agnostic — carried
+  over unchanged from the previous Pac-Man version and drives the HUD/overlay DOM elements exactly
+  the same way regardless of what's happening inside the canvas.
 - `input.js` — wires the custom-styled HTML touch buttons into Kaplay's virtual button system
   (`pressButton()`/`releaseButton()`) so `isButtonDown()`/`onButtonPress()` in `main.js` see
   keyboard and touch identically. Keyboard bindings themselves are declared via `kaplay({buttons})`
@@ -87,12 +92,20 @@ vendored from):
   More" by greatdocbrown (the commit coin + Root Access key). CC0 means no attribution is legally
   required, but don't add sprites from anywhere else without checking the license first — a public
   repo commits raw asset files as plain files, which some "free" licenses (e.g. CraftPix's)
-  explicitly forbid redistributing. All four enemy sprites (`bug`/`latency-spike`/`failed-pipeline`,
-  originally one reused soldier character tinted per type, and `outage`, originally a hand-drawn
-  screen/monitor design) were replaced with original AI-generated pixel art — see the git history
-  around those changes for the generation pipeline (SDXL via a local ComfyUI, background-removed
-  and pixelated with a small Python script — `~/comfy-projects/devops-platformer-enemies/` on the
-  machine that generated them — not hand-drawn). `collectible-cash.png` is a hand-drawn flat icon,
+  explicitly forbid redistributing. All six enemy sprites (`bug`/`latency-spike`/`failed-pipeline`,
+  originally one reused soldier character tinted per type; `outage`, originally a hand-drawn
+  screen/monitor design; `ddos-bot` and `stack-overflow`, both added new rather than replaced) are
+  original AI-generated pixel art — see the git history around those changes for the generation
+  pipeline (SDXL via a local ComfyUI, background-removed and pixelated with a small Python script —
+  `~/comfy-projects/devops-platformer-enemies/` on the machine that generated them — not
+  hand-drawn). `ddos-bot` additionally has a second 2-frame sprite pool (`enemy-ddos-bot-fire-*.png`)
+  for its fire-pose telegraph animation (see `entities.js`'s `ENEMY_CONFIGS.fireSprites` and
+  `updateEnemy()`'s `"gunner"` behavior) — the only enemy type with more than 2 total frames.
+  `bullet-ddos.png`/`bullet-stack-overflow.png` (each enemy's shot sprite, see
+  `ENEMY_CONFIGS.bulletSprite`) and `bonus-uplink.png` (the server-rack topper, replacing the
+  retired `bonus-flag.png`) are hand-authored flat-color pixel icons — same "simple enough not to
+  need the AI pipeline" category as `bullet-player.png`/`bullet-enemy.png`, not part of the
+  AI-generated batch. `collectible-cash.png` is a hand-drawn flat icon,
   not part of that AI-generated batch. `collectible-redundancy.png` is "Hard Drive" by Pong Man
   (CC0, OpenGameArt, https://opengameart.org/content/hard-drive), used at its native 32x32 —
   unlike the other curated sprites above it isn't from either CC0 itch.io pack, so if it's ever

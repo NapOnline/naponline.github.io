@@ -6,7 +6,6 @@ import {
   PLAYER_HEIGHT,
   ENEMY_CONFIGS,
   ENEMY_HIT_FLASH_MS,
-  BULLET_SPEED,
   createPlayer,
   createEnemy,
   createBullet,
@@ -16,6 +15,7 @@ import {
   spawnFloatingText,
   spawnMuzzleFlash,
   spawnLandingDust,
+  spawnPowerAura,
 } from "./entities.js";
 import { createCollectible, createGoal, createPole, POLE_HEIGHT } from "./collectibles.js";
 import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
@@ -30,6 +30,12 @@ const GRAVITY = 2400;
 const JUMP_FORCE = 820;
 const MOVE_SPEED = 200;
 const POWER_DURATION_MS = 8000;
+// Root Access visual feedback (see onUpdate) — the gold tint target, same
+// triple as --gold-accent in stylesheet.css so the in-canvas tint and the
+// HUD glow read as the same color. Deliberately not the turret telegraph's
+// red/orange warning tint, which reads as danger rather than "buffed."
+const POWER_TINT = [255, 209, 102];
+const POWER_AURA_INTERVAL_MS = 150;
 const HIT_INVINCIBLE_MS = 1400;
 const HIT_STUN_MS = 220;
 const SHOOT_COOLDOWN_MS = 260;
@@ -94,7 +100,14 @@ const FLAGPOLE_ACE_HEIGHT_FRAC = 0.9;
 // Root Cause achievement — kills within a single Root Access window.
 const ROOT_CAUSE_KILL_COUNT = 3;
 
-const ENEMY_SYMBOLS = { b: "bug", l: "latency-spike", p: "failed-pipeline", o: "outage" };
+const ENEMY_SYMBOLS = {
+  b: "bug",
+  l: "latency-spike",
+  p: "failed-pipeline",
+  o: "outage",
+  d: "ddos-bot",
+  s: "stack-overflow",
+};
 
 const ASSET_BASE = new URL("./assets/", import.meta.url).href;
 
@@ -180,6 +193,17 @@ function init() {
   loadSprite("player-legs", `${ASSET_BASE}player-legs.png`, { sliceX: 4, sliceY: 1, anims: LEGS_ANIMS });
   Object.entries(ENEMY_CONFIGS).forEach(([type, config]) => {
     config.sprites.forEach((name) => loadSprite(name, `${ASSET_BASE}${name}.png`));
+    // The "gunner" behavior's fire-pose telegraph pool — see entities.js's
+    // updateEnemy(). Only present on types that use it (currently ddos-bot).
+    if (config.fireSprites) {
+      config.fireSprites.forEach((name) => loadSprite(name, `${ASSET_BASE}${name}.png`));
+    }
+    // Per-type shot sprite override — see ENEMY_CONFIGS's bulletSprite field
+    // and main.js's fire loop. Falls back to the default "bullet-enemy"
+    // sprite (loaded below) when absent.
+    if (config.bulletSprite) {
+      loadSprite(config.bulletSprite, `${ASSET_BASE}${config.bulletSprite}.png`);
+    }
     // Shatter-effect fragments (see entities.js's spawnEnemyFragments() and
     // dev/generate-enemy-fragments.sh) — 4 mechanical crops per type.
     for (let i = 0; i < 4; i++) {
@@ -195,7 +219,7 @@ function init() {
   loadSprite("tile-platform", `${ASSET_BASE}tile-platform.png`);
   loadSprite("bullet-player", `${ASSET_BASE}bullet-player.png`);
   loadSprite("bullet-enemy", `${ASSET_BASE}bullet-enemy.png`);
-  loadSprite("bonus-flag", `${ASSET_BASE}bonus-flag.png`);
+  loadSprite("bonus-uplink", `${ASSET_BASE}bonus-uplink.png`);
 
   setGravity(GRAVITY);
   setupTouchControls(touchControls);
@@ -267,6 +291,14 @@ function init() {
   // (see the collectible collide handler), checked in winRound().
   let hitCritical = false;
   let recoveredFromCritical = false;
+  // Root Access visual feedback — see the onUpdate block below.
+  // powerPulseMs is a free-running phase accumulator for the steady tint
+  // pulse (deliberately NOT derived from state.powerTimer's countdown, so
+  // the pulse rate stays constant regardless of how much buff time is
+  // left). powerAuraMs throttles spawnPowerAura() to a fixed interval
+  // rather than emitting a burst every single frame.
+  let powerPulseMs = 0;
+  let powerAuraMs = 0;
   // Parallax background layers — see buildLevel() (creation) and the
   // camX-driven reposition in onUpdate. Kept as outer-scope refs since
   // they're repositioned every frame, same pattern as `player`.
@@ -379,6 +411,18 @@ function init() {
           totalEnemies += 1;
           return [];
         },
+        d: (tilePos) => {
+          createEnemy(ENEMY_SYMBOLS.d, tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          totalMinShots += ENEMY_CONFIGS[ENEMY_SYMBOLS.d].health;
+          totalEnemies += 1;
+          return [];
+        },
+        s: (tilePos) => {
+          createEnemy(ENEMY_SYMBOLS.s, tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
+          totalMinShots += ENEMY_CONFIGS[ENEMY_SYMBOLS.s].health;
+          totalEnemies += 1;
+          return [];
+        },
         c: (tilePos) => {
           createCollectible("cash", tilePos.x * TILE_SIZE, tilePos.y * TILE_SIZE);
           totalCollectibles += 1;
@@ -454,6 +498,12 @@ function init() {
     player.vel.x = 0;
     player.vel.y = 0;
     player.opacity = 1;
+    // Otherwise a round ending mid-Root-Access-buff freezes the gold tint
+    // through the entire win/lose overlay — the onUpdate logic that resets
+    // it is gated behind isPlaying, same class of gap player.opacity = 1
+    // above already guards against.
+    player.color = rgb(255, 255, 255);
+    player.legs.color = rgb(255, 255, 255);
     get("enemy").forEach((enemy) => {
       const config = ENEMY_CONFIGS[enemy.enemyType];
       enemy.hidden = false;
@@ -466,6 +516,9 @@ function init() {
       enemy.dir = 1;
       enemy.shootTimer = config.shootIntervalSec ?? Infinity;
       enemy.readyToFire = false;
+      // Otherwise a "gunner" enemy (see entities.js) revived mid-fire-pose
+      // would stay stuck mid-animation instead of resuming its walk cycle.
+      enemy.firePoseMs = 0;
       enemy.health = config.health;
       enemy.hitFlashMs = 0;
       enemy.opacity = 1;
@@ -981,8 +1034,11 @@ function init() {
     if (state.isPowered) {
       powerEl.hidden = false;
       powerTimerEl.textContent = Math.ceil(state.powerTimer / 1000);
+      powerEl.classList.add("is-active");
+      powerEl.classList.toggle("is-low", state.isPowerLow);
     } else {
       powerEl.hidden = true;
+      powerEl.classList.remove("is-active", "is-low");
     }
     // Low-REDUNDANCY warning pulse — see .game-critical-pulse in
     // stylesheet.css. Latches hitCritical for the Comeback achievement too
@@ -1027,6 +1083,39 @@ function init() {
         player.scale.x = 1;
         player.scale.y = 1;
       }
+    }
+
+    // Root Access visual feedback — a steady gold pulse (same sine-lerp
+    // idiom as the turret's telegraph tint in entities.js) while powered,
+    // switching to a hard on/off blink in the last POWER_LOW_THRESHOLD_MS
+    // (a distinct channel from the opacity-based hit-invincible blink above,
+    // so the two never visually collide if both happen to be active), plus
+    // a small periodic aura spark. Reset to white the instant the buff ends.
+    if (state.isPowered) {
+      if (state.isPowerLow) {
+        const blinkOn = Math.floor(state.powerTimer / 100) % 2 === 0;
+        const tint = blinkOn ? rgb(POWER_TINT[0], POWER_TINT[1], POWER_TINT[2]) : rgb(255, 255, 255);
+        player.color = tint;
+        player.legs.color = tint;
+      } else {
+        powerPulseMs += dt() * 1000;
+        const pulse = Math.abs(Math.sin(powerPulseMs * 0.006));
+        const tint = rgb(
+          lerp(255, POWER_TINT[0], pulse),
+          lerp(255, POWER_TINT[1], pulse),
+          lerp(255, POWER_TINT[2], pulse),
+        );
+        player.color = tint;
+        player.legs.color = tint;
+      }
+      powerAuraMs -= dt() * 1000;
+      if (powerAuraMs <= 0) {
+        powerAuraMs = POWER_AURA_INTERVAL_MS;
+        spawnPowerAura(player.pos.x + 20, player.pos.y + 20);
+      }
+    } else if (player.color.r !== 255 || player.color.g !== 255 || player.color.b !== 255) {
+      player.color = rgb(255, 255, 255);
+      player.legs.color = rgb(255, 255, 255);
     }
 
     // Landing dust puff + squash, on the airborne->grounded transition only
@@ -1102,9 +1191,35 @@ function init() {
     get("enemy").forEach((enemy) => {
       if (!enemy.readyToFire) return;
       enemy.readyToFire = false;
+      const config = ENEMY_CONFIGS[enemy.enemyType];
       const dir = player.pos.x < enemy.pos.x ? -1 : 1;
       enemy.flipX = dir < 0;
-      createBullet("enemy", enemy.pos.x + (dir > 0 ? 30 : -10), enemy.pos.y + 14, dir);
+      const bx = enemy.pos.x + (dir > 0 ? 30 : -10);
+      const by = enemy.pos.y + 14;
+      const bulletOpts = { sprite: config.bulletSprite, speed: config.bulletSpeed };
+      if (config.shotPattern === "spread") {
+        // A tight vertical fan of small bullets — e.g. ddos-bot's "packet
+        // flood" shot. spreadVelY is the max per-side vertical velocity
+        // offset; t sweeps -0.5..0.5 across the fan so it's centered on dir.
+        const count = config.spreadCount ?? 3;
+        const spread = config.spreadVelY ?? 60;
+        for (let i = 0; i < count; i++) {
+          const t = count === 1 ? 0 : i / (count - 1) - 0.5;
+          createBullet("enemy", bx, by, dir, { ...bulletOpts, velY: t * spread * 2 });
+        }
+      } else if (config.shotPattern === "arc") {
+        // A lobbed shot: launches with an upward velY, then arcGravity pulls
+        // it back down every frame (see the bullet-movement loop below) —
+        // same manual dt()-accumulated idiom spawnEnemyFragments() uses for
+        // its death-fragment physics.
+        createBullet("enemy", bx, by, dir, {
+          ...bulletOpts,
+          velY: config.arcVelY ?? -180,
+          gravity: config.arcGravity ?? 420,
+        });
+      } else {
+        createBullet("enemy", bx, by, dir, bulletOpts);
+      }
     });
 
     const camX = Math.min(Math.max(player.pos.x, VIEW_W / 2), LEVEL_WIDTH - VIEW_W / 2);
@@ -1117,9 +1232,14 @@ function init() {
     bgMid.pos.x = -PARALLAX_MARGIN + camX * (1 - PARALLAX_MID_FACTOR);
 
     get("bullet").forEach((bullet) => {
-      bullet.pos.x += bullet.dir * BULLET_SPEED * dt();
-      // All bullets despawn if they leave the level bounds
-      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40) {
+      if (bullet.gravity) bullet.velY += bullet.gravity * dt();
+      bullet.pos.x += bullet.velX * dt();
+      bullet.pos.y += bullet.velY * dt();
+      // All bullets despawn if they leave the level bounds. The y check is
+      // a defensive backstop for arc shots — in practice they already
+      // destroy() on hitting "ground" via the existing bullet-enemy/ground
+      // collision handler below.
+      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40 || bullet.pos.y > LEVEL_HEIGHT + 100) {
         destroy(bullet);
       }
       // Player bullets also despawn if they leave the camera view (see createBullet)
@@ -1262,6 +1382,7 @@ function init() {
         redundancy: state.redundancy,
         state: state.state,
         isPowered: state.isPowered,
+        isPowerLow: state.isPowerLow,
         isHitInvincible: state.isHitInvincible,
         isPlaying: state.isPlaying,
         isOver: state.isOver,
@@ -1297,13 +1418,19 @@ function init() {
         comboTimerMs = value > 0 ? COMBO_WINDOW_MS : 0;
       },
 
-      // Get live enemy data
+      // Get live enemy data. readyToFire/firePoseMs/shootTimer are included
+      // to let tests assert on the "gunner" behavior's on-screen-only fire
+      // gating (see entities.js's updateEnemy()) without needing to inspect
+      // bullets directly.
       getEnemies: () => {
         return get("enemy").map((e) => ({
           enemyType: e.enemyType,
           pos: { x: e.pos.x, y: e.pos.y },
           health: e.health,
           defeated: e.defeated,
+          readyToFire: e.readyToFire,
+          firePoseMs: e.firePoseMs,
+          shootTimer: e.shootTimer,
         }));
       },
 

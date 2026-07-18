@@ -10,10 +10,13 @@
 //     row, and the platform sprite on any elevated island)
 //   . empty space (or a pit, in the ground row)
 //   @ player spawn
-//   b/l/p/o enemy spawns (bug/latency-spike/failed-pipeline/outage turret)
+//   b/l/p/o/d/s enemy spawns (bug/latency-spike/failed-pipeline/outage
+//     turret/ddos-bot gunner/stack-overflow turret)
 //   c cash pickup             k Root Access key
 //   r Redundancy restore (heals one lost REDUNDANCY node, capped at max)
-//   F bonus flagpole (climb it for a height bonus before the goal)
+//   F bonus server rack (climb it for a signal-boost height bonus before
+//     the goal — see collectibles.js's createPole(), name/symbol kept from
+//     the original flagpole mechanic it reskins)
 //   g goal terminal ("Deploy to Production")
 //
 // Entities sit one row above the ground row they stand on; gravity settles
@@ -26,7 +29,7 @@ export const LEVEL_MAP = [
   "......................................................................................................................................................",
   ".........c......................c.......................k..........................c.........................c........................c...............",
   "........###....................###.....................###........................###.......................###......................###..............",
-  "..@..c.....c......b.c........c...l......c.p.kc......c.....o.c....b.c...c.lr....c.....p......c..oc..b....c.....lc.....p.c...c.o....bc....lc....c.F...g.",
+  "..@..c..d..c......b.c........c...l......c.p.kc......c.....o.c....b.c...c.lr....c.....p....s.c..oc..b....c..d..lc.....p.cs..c.o....bc....lc....c.F...g.",
   "##############.#########..##########.###########..############.############..###########.############..###########.############..##########.##########",
 ];
 

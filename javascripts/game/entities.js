@@ -103,7 +103,60 @@ export const ENEMY_CONFIGS = {
     hitbox: { offset: [1, 0], width: 32, height: 40 },
     health: 2,
     behavior: "turret",
-    shootIntervalSec: 2.2,
+    shootIntervalSec: 2.6,
+  },
+  "ddos-bot": {
+    label: "DDoS Bot",
+    // Walk cycle (used by createEnemy()/resetRound(), same convention as every
+    // other type above); fireSprites is the new addition — a second 2-frame
+    // pool for the "gunner" behavior's fire-pose telegraph, see updateEnemy().
+    sprites: ["enemy-ddos-bot-1", "enemy-ddos-bot-2"],
+    fireSprites: ["enemy-ddos-bot-fire-1", "enemy-ddos-bot-fire-2"],
+    tint: [255, 255, 255],
+    speed: 70,
+    width: 36,
+    height: 44,
+    hitbox: { offset: [2, 8], width: 32, height: 36 },
+    health: 2,
+    behavior: "gunner",
+    shootIntervalSec: 2.4,
+    // How long the fire-pose animation holds before the shot actually leaves
+    // — the visual telegraph, same fairness idea as TURRET_TELEGRAPH_SEC
+    // below but done via a sprite swap instead of a color pulse (this enemy
+    // moves and swaps sprites constantly already, so a color pulse would be
+    // easy to miss against the walk-cycle flicker).
+    firePoseSec: 0.5,
+    // "Packet flood" shot — a tight 3-way vertical fan instead of a single
+    // bolt, thematically a DDoS flood. See main.js's fire loop for how
+    // shotPattern/spreadCount/spreadVelY drive createBullet().
+    bulletSprite: "bullet-ddos",
+    shotPattern: "spread",
+    spreadCount: 3,
+    spreadVelY: 60,
+  },
+  "stack-overflow": {
+    label: "Stack Overflow",
+    sprites: ["enemy-stack-overflow-1", "enemy-stack-overflow-2"],
+    tint: [255, 255, 255],
+    speed: 0,
+    width: 32,
+    height: 48,
+    hitbox: { offset: [2, 4], width: 28, height: 42 },
+    health: 2,
+    // Reuses "turret" as-is (stationary + telegraph + fire) — a precarious
+    // stack of blocks sitting in place until it topples fits that exactly,
+    // no new updateEnemy() branch needed. Bullet shape is decided entirely
+    // by shotPattern below, not by the behavior.
+    behavior: "turret",
+    shootIntervalSec: 2.8,
+    // Lobbed "overflowing block" shot — arcs up then falls under arcGravity
+    // (see main.js's bullet-movement loop). A slower bulletSpeed than the
+    // default keeps it reading as a heavy tumbling block, not a bolt.
+    bulletSprite: "bullet-stack-overflow",
+    shotPattern: "arc",
+    bulletSpeed: 160,
+    arcVelY: -190,
+    arcGravity: 460,
   },
 };
 
@@ -131,6 +184,12 @@ export function createPlayer(x, y) {
     area({ shape: new Rect(vec2(...PLAYER_HITBOX.offset), PLAYER_HITBOX.width, PLAYER_HITBOX.height) }),
     body(),
     opacity(1),
+    // White = no tint. Mutated in main.js's onUpdate to a gold pulse while
+    // Root Access is active (and a hard blink as it's about to expire) —
+    // see main.js's POWER_TINT constant. .use(sprite(...)) swaps below never
+    // touch this component (same as the enemy tint surviving updateEnemy()'s
+    // sprite swaps), so it persists across every player layer change.
+    color(255, 255, 255),
     // Drives the jump/land squash-and-stretch — see main.js's onUpdate,
     // which sets a stretched/squashed scale on takeoff/landing and decays
     // it back toward (1,1) every frame. Scaling the parent composes through
@@ -149,7 +208,13 @@ export function createPlayer(x, y) {
   // its generation note) — the torso crop stops at y:30 of the original
   // 45x45 frame, the legs strip starts at y:26 of the same frame, and this
   // local offset reproduces that alignment under the parent's topleft anchor.
-  player.legs = player.add([sprite("player-legs", { anim: "stand" }), pos(0, 26), opacity(1), "player-legs"]);
+  player.legs = player.add([
+    sprite("player-legs", { anim: "stand" }),
+    pos(0, 26),
+    opacity(1),
+    color(255, 255, 255),
+    "player-legs",
+  ]);
   player.legs.hidden = true;
   return player;
 }
@@ -178,6 +243,10 @@ export function createEnemy(type, x, y) {
       burstTimer: 0.6,
       shootTimer: config.shootIntervalSec ?? Infinity,
       readyToFire: false,
+      // Counts down the "gunner" behavior's fire-pose telegraph — see
+      // updateEnemy()'s gunner branch. Unused (stays 0) by every other
+      // behavior.
+      firePoseMs: 0,
       // Bullets chip this down by 1 (see main.js's bullet-enemy collision
       // handler); a stomp or Root-Access touch bypasses it entirely and
       // defeats in one hit regardless. hitFlashMs drives a brief opacity
@@ -194,13 +263,38 @@ export function createEnemy(type, x, y) {
   return enemy;
 }
 
-function swapFrame(enemy, config, deltaTime) {
+// spritePool defaults to the walk-cycle pair every other behavior uses;
+// the "gunner" behavior's fire-pose telegraph passes config.fireSprites
+// instead so it can alternate over its own 2-frame pool without disturbing
+// enemy.animIndex's normal walk-cycle meaning.
+function swapFrame(enemy, config, deltaTime, spritePool = config.sprites) {
   enemy.animTimer += deltaTime;
   if (enemy.animTimer >= ANIM_SWAP_SEC) {
     enemy.animTimer = 0;
     enemy.animIndex = 1 - enemy.animIndex;
-    enemy.use(sprite(config.sprites[enemy.animIndex], { width: config.width, height: config.height }));
+    enemy.use(sprite(spritePool[enemy.animIndex], { width: config.width, height: config.height }));
   }
+}
+
+// Shared bounce-at-patrol-bounds check — used by the generic patrol/burst/
+// erratic fallthrough at the bottom of updateEnemy() and by the "gunner"
+// behavior below, which needs the same bounds logic but can't use that
+// shared fallthrough (it has its own full per-frame animation state machine).
+function applyPatrolBounds(enemy) {
+  if (enemy.pos.x <= enemy.minX) enemy.dir = 1;
+  if (enemy.pos.x >= enemy.maxX) enemy.dir = -1;
+}
+
+// "On screen" here only needs an X check — see main.js's onUpdate: the
+// camera's Y never moves (the level is exactly one screen tall), and X is
+// clamped to follow the player. getCamPos()/width() are Kaplay's own
+// ambient globals (width() returns the fixed internal render resolution set
+// by kaplay({width: VIEW_W, ...}) in main.js, i.e. exactly VIEW_W) — reusing
+// them here means this never needs to duplicate main.js's camera-clamp math
+// or thread a value through by hand.
+function isOnScreen(x, entityWidth) {
+  const cam = getCamPos();
+  return Math.abs(x + entityWidth / 2 - cam.x) < width() / 2;
 }
 
 // Duration of the blink triggered by a non-lethal bullet hit (see
@@ -243,6 +337,46 @@ function updateEnemy(enemy, config) {
     return;
   }
 
+  if (config.behavior === "gunner") {
+    // Walks continuously (unlike turret, which is stationary) and only
+    // fires when both it and the player are on screen — see isOnScreen()
+    // above. The fire-pose animation itself is the telegraph: shootTimer
+    // hitting 0 doesn't fire immediately, it starts a firePoseSec-long pose
+    // (alternating over config.fireSprites), and only at the end of that
+    // window does readyToFire flip true — main.js's existing generic
+    // get("enemy").forEach(...) bullet-spawn loop needs no changes to
+    // handle this, exactly like it already does for the turret.
+    applyPatrolBounds(enemy);
+    enemy.vel.x = enemy.dir * config.speed;
+    enemy.flipX = enemy.dir > 0;
+
+    if (enemy.firePoseMs > 0) {
+      enemy.firePoseMs -= deltaTime * 1000;
+      swapFrame(enemy, config, deltaTime, config.fireSprites);
+      if (enemy.firePoseMs <= 0) {
+        enemy.readyToFire = true;
+        enemy.shootTimer = config.shootIntervalSec;
+        enemy.animIndex = 0;
+        enemy.use(sprite(config.sprites[0], { width: config.width, height: config.height }));
+      }
+      return;
+    }
+
+    swapFrame(enemy, config, deltaTime);
+    const player = get("player")[0];
+    if (player && isOnScreen(enemy.pos.x, config.width) && isOnScreen(player.pos.x, player.width)) {
+      enemy.shootTimer -= deltaTime;
+      if (enemy.shootTimer <= 0) {
+        enemy.firePoseMs = config.firePoseSec * 1000;
+        // Clean telegraph start — otherwise the fire pose's first frame-swap
+        // would inherit whatever fractional time was left on the walk cycle.
+        enemy.animTimer = 0;
+        enemy.animIndex = 0;
+      }
+    }
+    return;
+  }
+
   if (config.behavior === "burst") {
     enemy.burstTimer -= deltaTime;
     if (enemy.burstTimer <= 0) {
@@ -254,8 +388,7 @@ function updateEnemy(enemy, config) {
     if (Math.random() < 0.004) enemy.dir *= -1;
   }
 
-  if (enemy.pos.x <= enemy.minX) enemy.dir = 1;
-  if (enemy.pos.x >= enemy.maxX) enemy.dir = -1;
+  applyPatrolBounds(enemy);
 
   enemy.vel.x = enemy.dir * speed;
   if (speed > 0) swapFrame(enemy, config, deltaTime);
@@ -268,10 +401,20 @@ export const BULLET_SPEED = 320;
 // Player/enemy shots. Plain runtime entities (never touched by addLevel()),
 // so — unlike level tiles/enemies/collectibles — it's safe to destroy() them
 // outright once they hit something or leave the level bounds.
-export function createBullet(owner, x, y, dir) {
+//
+// opts lets a firing enemy (see ENEMY_CONFIGS's bulletSprite/shotPattern
+// fields and main.js's fire loop) override the sprite/speed and give the
+// bullet an initial vertical velocity and/or per-frame gravity accel, on top
+// of the plain horizontal dir every bullet has always had — a spread shot
+// passes a small velY fan, an arc shot passes a launch velY plus gravity.
+// Collision handlers still key only on the generic "bullet-player"/
+// "bullet-enemy" tags, so any shot shape reaches them for free.
+export function createBullet(owner, x, y, dir, opts = {}) {
   const isPlayerBullet = owner === "player";
+  const spriteName = opts.sprite ?? (isPlayerBullet ? "bullet-player" : "bullet-enemy");
+  const speed = opts.speed ?? BULLET_SPEED;
   const components = [
-    sprite(isPlayerBullet ? "bullet-player" : "bullet-enemy"),
+    sprite(spriteName),
     pos(x, y),
     area(),
     z(5),
@@ -283,7 +426,7 @@ export function createBullet(owner, x, y, dir) {
   if (isPlayerBullet) {
     components.push(offscreen({ destroy: true, distance: 80 }));
   }
-  components.push({ dir, ownerTag: owner });
+  components.push({ dir, ownerTag: owner, velX: dir * speed, velY: opts.velY ?? 0, gravity: opts.gravity ?? 0 });
   return add(components);
 }
 
@@ -416,6 +559,34 @@ export function spawnMuzzleFlash(x, y) {
     "fx",
   ]);
   fx.emit(6);
+  fx.onEnd(() => destroy(fx));
+}
+
+// Small periodic spark while Root Access is active — see main.js's onUpdate,
+// which throttles calls to this on a timer (powerAuraMs) rather than every
+// frame. Same one-shot particles() pattern as the effects above, small and
+// upward-drifting (unlike the omnidirectional pickup sparkle) so it reads as
+// an ongoing aura rather than another one-off burst.
+const POWER_AURA_LIFE = 0.35;
+
+export function spawnPowerAura(x, y) {
+  const fx = add([
+    pos(x, y),
+    particles(
+      {
+        max: 5,
+        speed: [20, 55],
+        angle: [0, 360],
+        lifeTime: [0.15, POWER_AURA_LIFE],
+        colors: [rgb(255, 209, 102), rgb(255, 238, 180)],
+        opacities: [0.9, 0],
+      },
+      { lifetime: POWER_AURA_LIFE + 0.1, rate: 0, direction: -90, spread: 100 },
+    ),
+    z(6),
+    "fx",
+  ]);
+  fx.emit(5);
   fx.onEnd(() => destroy(fx));
 }
 

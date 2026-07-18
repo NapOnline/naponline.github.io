@@ -307,6 +307,67 @@ async function testTurretBulletDespawnRegression() {
   }
 }
 
+async function testGunnerOnScreenFiring() {
+  console.log('→ DDoS Bot (gunner) only fires when it and the player are both on screen');
+  const { browser, page } = await launchTestBrowser(true);
+
+  try {
+    await navigateToGame(page, true);
+    await startGame(page);
+
+    const enemies = await getEnemies(page);
+    const gunnerIndex = enemies.findIndex((e) => e.enemyType === 'ddos-bot');
+    if (gunnerIndex === -1) {
+      reportTest('DDoS Bot spawn present', false, 'No ddos-bot enemy found');
+      failCount++;
+      return;
+    }
+    const gunnerX = enemies[gunnerIndex].pos.x;
+
+    // Move the player far off-screen from the DDoS Bot and confirm it never
+    // enters its fire-pose telegraph while off-screen — entities.js's
+    // updateEnemy() only counts shootTimer down while isOnScreen() is true
+    // for both it and the player.
+    await teleportPlayer(page, gunnerX + 3000, 100);
+    let firedWhileOffScreen = false;
+    for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(500);
+      const cur = (await getEnemies(page))[gunnerIndex];
+      if (cur && cur.firePoseMs > 0) {
+        firedWhileOffScreen = true;
+        break;
+      }
+    }
+
+    // Bring the player back next to the DDoS Bot (on-screen) and confirm it
+    // does enter the fire-pose telegraph within one shootIntervalSec cycle.
+    await teleportPlayer(page, gunnerX, 100);
+    let firedOnScreen = false;
+    for (let i = 0; i < 8; i++) {
+      await page.waitForTimeout(500);
+      const cur = (await getEnemies(page))[gunnerIndex];
+      if (cur && cur.firePoseMs > 0) {
+        firedOnScreen = true;
+        break;
+      }
+    }
+
+    if (!firedWhileOffScreen && firedOnScreen) {
+      reportTest('DDoS Bot on-screen-only firing', true);
+      passCount++;
+    } else {
+      reportTest(
+        'DDoS Bot on-screen-only firing',
+        false,
+        `firedWhileOffScreen=${firedWhileOffScreen}, firedOnScreen=${firedOnScreen}`,
+      );
+      failCount++;
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
 async function runAllTests() {
   console.log('\n🎮 Running mechanics tests...\n');
 
@@ -320,6 +381,7 @@ async function runAllTests() {
   await testPause();
   await testHUDSync();
   await testTurretBulletDespawnRegression();
+  await testGunnerOnScreenFiring();
 
   console.log(`\n📊 Results: ${passCount} passed, ${failCount} failed\n`);
   process.exit(failCount > 0 ? 1 : 0);

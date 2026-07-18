@@ -39,7 +39,7 @@ const ACHIEVEMENTS = [
   { id: 'perfect-run', name: 'Perfect Run', setup: () => ({ tookDamage: false, usedPower: false, redundancy: 3 }) },
   { id: 'iron-will', name: 'Iron Will', setup: () => ({ redundancy: 1 }) },
   { id: 'speedrunner', name: 'Speedrunner', setup: () => ({ elapsedMs: 30000 }) },
-  { id: 'flagpole-ace', name: 'Flagpole Ace', directTrigger: true },
+  { id: 'flagpole-ace', name: 'Rack Climber', directTrigger: true },
   { id: 'root-cause', name: 'Root Cause', directTrigger: true },
   { id: 'no-survivors', name: 'No Survivors', setup: () => ({ shotsFired: 0 }) },
   { id: 'comeback', name: 'Comeback', directTrigger: true },

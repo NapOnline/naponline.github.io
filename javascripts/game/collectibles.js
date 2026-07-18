@@ -34,26 +34,62 @@ export function createGoal(x, y) {
   ]);
 }
 
-// A bonus flagpole planted just before the goal. Grabbing it near the top
+// A bonus server rack planted just before the goal. Grabbing it near the top
 // (a well-timed running jump) scores a much bigger "root climb" bonus than
-// grabbing it low — Mario flagpole-style optional skill challenge. `groundY`
-// is the world Y of the pole's base (top of the ground tile it stands on).
-// 3 tiles tall: a perfectly-timed jump (max height ~140px, see main.js's
-// tuned JUMP_FORCE/GRAVITY) grabs it close to the top without the top
-// being physically unreachable.
+// grabbing it low — Mario flagpole-style optional skill challenge, reskinned
+// as a rack with an uplink antenna instead of a flag. `groundY` is the world
+// Y of the pole's base (top of the ground tile it stands on). 3 tiles tall:
+// a perfectly-timed jump (max height ~140px, see main.js's tuned
+// JUMP_FORCE/GRAVITY) grabs it close to the top without the top being
+// physically unreachable.
 export const POLE_HEIGHT = 3 * 48;
+
+// Status-light color pairs blinked along the rack shaft (see the blip loop
+// below) — deliberately not tied to any GameState value, purely ambient
+// flavor for the reskin, like a real rack's activity LEDs. Plain [r,g,b]
+// arrays rather than rgb() Color instances, since color()'s initial
+// component list wants three separate numbers, same as every other
+// color(...) call in this codebase.
+const RACK_LIGHT_COLORS = [
+  [53, 208, 127],
+  [255, 45, 58],
+];
+const RACK_LIGHT_BLINK_SEC = 0.5;
 
 export function createPole(x, groundY) {
   const top = groundY - POLE_HEIGHT;
   add([
     rect(6, POLE_HEIGHT),
     pos(x + 21, top),
-    color(180, 180, 190),
-    outline(1, rgb(90, 90, 100)),
+    color(40, 42, 50),
+    outline(1, rgb(180, 30, 40)),
     "pole-visual",
   ]);
+  // A few blinking status-light blips down the shaft — same plain
+  // rect()+color() decoration idiom as the ground-edge warning caps in
+  // main.js's "#" tile handler, just alternating color on a timer instead
+  // of being static.
+  for (let i = 0; i < 3; i++) {
+    const startIndex = i % 2;
+    const blip = add([
+      rect(4, 4),
+      pos(x + 22, top + 16 + i * 40),
+      color(...RACK_LIGHT_COLORS[startIndex]),
+      z(1),
+      "pole-visual",
+      { blipIndex: startIndex, blinkTimer: i * 0.15 },
+    ]);
+    blip.onUpdate(() => {
+      blip.blinkTimer += dt();
+      if (blip.blinkTimer >= RACK_LIGHT_BLINK_SEC) {
+        blip.blinkTimer = 0;
+        blip.blipIndex = 1 - blip.blipIndex;
+        blip.color = rgb(...RACK_LIGHT_COLORS[blip.blipIndex]);
+      }
+    });
+  }
   add([
-    sprite("bonus-flag"),
+    sprite("bonus-uplink"),
     pos(x + 6, top),
     "pole-visual",
   ]);

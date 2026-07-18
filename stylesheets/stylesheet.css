@@ -236,6 +236,32 @@ main.container {
   color: var(--goal-green);
 }
 
+/* Root Access active/almost-out glow — text-shadow rather than box-shadow
+   since this badge is plain inline text with no background/padding box.
+   text-shadow inherits by default, so this also reaches the nested
+   <strong> countdown. Class presence is toggled every frame in main.js's
+   HUD sync block (same ".is-active" convention as .game-critical-pulse). */
+.hud-item--power.is-active {
+  animation: power-glow 1.6s ease-in-out infinite;
+}
+
+.hud-item--power.is-low {
+  /* Faster, more urgent cycle overrides the steady glow above once the
+     buff is about to expire — same class-swap idea as .game-critical-pulse,
+     just scoped to this one badge instead of a full-canvas overlay. */
+  animation: power-glow-low 0.5s ease-in-out infinite;
+}
+
+@keyframes power-glow {
+  0%, 100% { text-shadow: 0 0 4px rgba(255, 209, 102, 0.35); }
+  50% { text-shadow: 0 0 10px rgba(255, 209, 102, 0.85); }
+}
+
+@keyframes power-glow-low {
+  0%, 100% { text-shadow: 0 0 3px rgba(255, 209, 102, 0.25); }
+  50% { text-shadow: 0 0 12px rgba(255, 209, 102, 0.95); }
+}
+
 .redundancy-bar {
   display: inline-flex;
   gap: 4px;
@@ -1016,6 +1042,16 @@ dialog.recipe-dialog::backdrop {
   .game-critical-pulse.is-active {
     animation: none;
     opacity: 0.25;
+  }
+
+  .hud-item--power.is-active {
+    animation: none;
+    text-shadow: 0 0 6px rgba(255, 209, 102, 0.6);
+  }
+
+  .hud-item--power.is-low {
+    animation: none;
+    text-shadow: 0 0 8px rgba(255, 209, 102, 0.85);
   }
 }
 

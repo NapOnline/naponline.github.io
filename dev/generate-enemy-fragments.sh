@@ -15,6 +15,8 @@ declare -A DIMS=(
     [latency-spike]="17x22"
     [failed-pipeline]="29x22"
     [outage]="17x20"
+    [ddos-bot]="18x22"
+    [stack-overflow]="16x24"
 )
 
 for type in "${!DIMS[@]}"; do

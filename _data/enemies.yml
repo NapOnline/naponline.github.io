@@ -17,3 +17,13 @@
   label: Outage
   sprite: enemy-outage-1.png
   description: "Doesn't move. Doesn't need to — it just keeps firing."
+
+- id: ddos-bot
+  label: DDoS Bot
+  sprite: enemy-ddos-bot-1.png
+  description: "Keeps marching, keeps flooding requests — only opens fire once it's got a clean line of sight."
+
+- id: stack-overflow
+  label: Stack Overflow
+  sprite: enemy-stack-overflow-1.png
+  description: "Doesn't move. Lobs an overflowing error straight over cover — the one shot you can't outrun in a straight line."
