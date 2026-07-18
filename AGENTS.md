@@ -170,3 +170,25 @@ pins `liquid` to `>= 4.0.4` (`~> 4.0`) because `github-pages` otherwise resolves
 release, which calls the removed `String#tainted?` and crashes rendering on any Ruby `>= 3.2`; keep
 that pin even if the stated Jekyll/liquid versions look outdated — it matches what GitHub's Pages
 build environment actually runs.
+
+## Pre-commit testing (required for AI agents)
+
+**Before committing any change to `javascripts/game/` or other site code, you MUST:**
+
+1. Run `dev/test.sh` locally
+2. Wait for it to exit 0 (all tests pass)
+3. Only then create a commit and push
+
+**Do not commit or push on a failing test.** The test suite is the gate for catching the class of
+bug that shipped in this session: undefined Kaplay globals at runtime (visible only in a real
+browser, not caught by syntax checks).
+
+`dev/test.sh` is a single command (see README.md's "Testing" section) that runs:
+- Jekyll build with strict front matter checking
+- Syntax check on all game JS files
+- Browser smoke test via Playwright (loads the game page, checks for errors/exceptions,
+  confirms the start button works, briefly tests input)
+
+See `dev/serve.sh` and `dev/tests/smoke.mjs` for details. This is especially critical for refactors
+that extract logic into new modules — static checks cannot catch an undefined implicit global that
+only fires when the module is actually imported and executed in the browser context.

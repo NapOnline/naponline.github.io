@@ -1,0 +1,10 @@
+{
+  "name": "naponline-game-tests",
+  "version": "1.0.0",
+  "description": "Dev-only browser smoke tests for the Kaplay game",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

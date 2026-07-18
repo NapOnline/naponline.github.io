@@ -1,3 +1,4 @@
 *.swp
 *.lock
 _site/**
+dev/tests/node_modules/
