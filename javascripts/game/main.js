@@ -165,6 +165,7 @@ function init() {
     background: [18, 16, 19],
     crisp: true,
     global: true,
+    stretch: true,
     buttons: {
       left: { keyboard: ["left", "a"] },
       right: { keyboard: ["right", "d"] },
@@ -173,18 +174,6 @@ function init() {
     },
   });
 
-  // Kaplay (given explicit width/height and no stretch/letterbox option)
-  // hard-codes the canvas's own inline style to a FIXED "480px"/"240px" —
-  // not a percentage — regardless of how big or small its parent actually
-  // is. That's harmless as long as the frame happens to render at exactly
-  // 480x240 CSS px, but on any narrower box (e.g. a phone in portrait,
-  // where .game-wrap shrinks below 480px) the fixed-size canvas overflows
-  // its frame and `overflow: hidden` on .game-canvas-frame silently clips
-  // whatever sits past the bottom edge — which is exactly the ground row.
-  // Overriding it to fill the frame (matching #platformer-canvas's own
-  // width/height:100% in the stylesheet) is what actually fixes that.
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
 
   loadSprite("player", `${ASSET_BASE}player.png`, { sliceX: 8, sliceY: 8, anims: PLAYER_ANIMS });
   loadSprite("player-torso", `${ASSET_BASE}player-torso.png`);
@@ -340,11 +329,13 @@ function init() {
                 z(1),
               ]);
             }
+            const tags = ["ground"];
+            if (isEdge) tags.push("ground-edge");
             return [
               sprite(tileSprite),
               area(),
               body({ isStatic: true }),
-              isEdge ? "ground-edge" : "ground",
+              ...tags,
             ];
           }
 
@@ -766,6 +757,7 @@ function init() {
     const gameOver = state.loseSegment();
     triggerHitFlash();
     audio.playHit();
+    if (!REDUCE_MOTION) shake(2.5);
     if (gameOver) {
       // Play the death animation in place before handing off to
       // finishGameOver() — see the deathAnimMs branch in onUpdate(), which
@@ -1126,18 +1118,7 @@ function init() {
 
     get("bullet").forEach((bullet) => {
       bullet.pos.x += bullet.dir * BULLET_SPEED * dt();
-      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40) {
-        destroy(bullet);
-        return;
-      }
-      // Player shots shouldn't be able to snipe an enemy that's scrolled
-      // off screen — despawn once a player bullet leaves the visible
-      // camera range (same 40px margin as the level-bounds check above, so
-      // it disappears just past the edge rather than at the exact pixel
-      // boundary). Enemy bullets are unaffected — they're already limited
-      // to short bursts/turret range, not free-flying the whole level.
-      if (bullet.ownerTag !== "player") return;
-      if (bullet.pos.x < camX - VIEW_W / 2 - 40 || bullet.pos.x > camX + VIEW_W / 2 + 40) destroy(bullet);
+      // offscreen({ destroy: true }) component handles despawn automatically
     });
 
     setCamPos(camX, VIEW_H / 2);
@@ -1195,9 +1176,7 @@ function init() {
   });
 
   onCollide("bullet-player", "ground", (bullet) => destroy(bullet));
-  onCollide("bullet-player", "ground-edge", (bullet) => destroy(bullet));
   onCollide("bullet-enemy", "ground", (bullet) => destroy(bullet));
-  onCollide("bullet-enemy", "ground-edge", (bullet) => destroy(bullet));
 
   onCollide("bullet-enemy", "player", (bullet, playerObj) => {
     destroy(bullet);

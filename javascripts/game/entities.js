@@ -277,6 +277,7 @@ export function createBullet(owner, x, y, dir) {
     z(5),
     "bullet",
     isPlayerBullet ? "bullet-player" : "bullet-enemy",
+    offscreen({ destroy: true, distance: 80 }),
     { dir, ownerTag: owner },
   ]);
 }
