@@ -22,7 +22,6 @@ import { GameState, MAX_REDUNDANCY, STATES } from "./state.js";
 import { setupTouchControls } from "./input.js";
 import { loadHighScores, submitHighScore, getTopScore } from "./highscores.js";
 import { ACHIEVEMENTS, loadUnlocked, unlock as unlockAchievement } from "./achievements.js";
-import { computeEndOfRunBonuses } from "./scoring.js";
 import * as audio from "./audio.js";
 
 const VIEW_W = 480;
@@ -57,10 +56,31 @@ const PARALLAX_MARGIN = 2000;
 const PARALLAX_FAR_FACTOR = 0.35;
 const PARALLAX_MID_FACTOR = 0.7;
 
+// End-of-run bonus tuning (winRound()) — rewards a clean, fast run on top
+// of the existing Full Deploy/pole-climb bonuses.
+const REDUNDANCY_BONUS_PER_NODE = 100;
+const NO_POWER_BONUS = 250;
+const NO_HEAL_BONUS = 250;
+const SPEED_BONUS_MAX = 1000;
+const SPEED_BONUS_DECAY_PER_SEC = 8;
+// Shot-efficiency bonus: a continuous taper around totalMinShots (computed
+// per-level in buildLevel() from each enemy's configured health) — at or
+// under par scores the max bonus, every shot past par shrinks it, and past
+// the zero crossing it becomes a growing penalty (floored so spamming the
+// fire button can't spiral the score arbitrarily negative).
+const SHOT_BONUS_MAX = 500;
+const SHOT_DECAY_PER_SHOT = 15;
+const SHOT_PENALTY_CAP = 300;
+// Extra flat nod for clearing the level without ever firing — the taper
+// above already maxes out at 0 shots, this stacks an additional callout.
+const PACIFIST_BONUS = 150;
 // Kill-streak combo: chaining kills within this window escalates a bonus,
 // awarded immediately at each extension (see defeatEnemy()).
 const COMBO_WINDOW_MS = 2000;
 const COMBO_BONUS_PER_STEP = 25;
+// Perfect Run: never hit, every enemy defeated, everything collected, and
+// Root Access never touched.
+const PERFECT_RUN_BONUS = 1000;
 // How long the player plays its death animation before the game-over
 // overlay appears (see handlePlayerHit()/finishGameOver()).
 const DEATH_ANIM_MS = 650;
@@ -145,7 +165,6 @@ function init() {
     background: [18, 16, 19],
     crisp: true,
     global: true,
-    stretch: true,
     buttons: {
       left: { keyboard: ["left", "a"] },
       right: { keyboard: ["right", "d"] },
@@ -154,6 +173,18 @@ function init() {
     },
   });
 
+  // Kaplay (given explicit width/height and no stretch/letterbox option)
+  // hard-codes the canvas's own inline style to a FIXED "480px"/"240px" —
+  // not a percentage — regardless of how big or small its parent actually
+  // is. That's harmless as long as the frame happens to render at exactly
+  // 480x240 CSS px, but on any narrower box (e.g. a phone in portrait,
+  // where .game-wrap shrinks below 480px) the fixed-size canvas overflows
+  // its frame and `overflow: hidden` on .game-canvas-frame silently clips
+  // whatever sits past the bottom edge — which is exactly the ground row.
+  // Overriding it to fill the frame (matching #platformer-canvas's own
+  // width/height:100% in the stylesheet) is what actually fixes that.
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
 
   loadSprite("player", `${ASSET_BASE}player.png`, { sliceX: 8, sliceY: 8, anims: PLAYER_ANIMS });
   loadSprite("player-torso", `${ASSET_BASE}player-torso.png`);
@@ -309,13 +340,11 @@ function init() {
                 z(1),
               ]);
             }
-            const tags = ["ground"];
-            if (isEdge) tags.push("ground-edge");
             return [
               sprite(tileSprite),
               area(),
               body({ isStatic: true }),
-              ...tags,
+              isEdge ? "ground-edge" : "ground",
             ];
           }
 
@@ -737,7 +766,6 @@ function init() {
     const gameOver = state.loseSegment();
     triggerHitFlash();
     audio.playHit();
-    if (!REDUCE_MOTION) shake(2.5);
     if (gameOver) {
       // Play the death animation in place before handing off to
       // finishGameOver() — see the deathAnimMs branch in onUpdate(), which
@@ -824,23 +852,75 @@ function init() {
     let total = bonus;
     const bonusLines = [];
     if (bonusLabel) bonusLines.push({ text: bonusLabel, isPenalty: false });
-    // Compute all bonuses via pure function
-    const bonusResult = computeEndOfRunBonuses({
-      totalCollectibles,
-      collectedCount,
-      totalCash,
-      collectedCash,
-      totalMinShots,
-      totalEnemies,
-      defeatedEnemyCount,
-      bulletKillCount,
-      state,
-      elapsedMs: state.elapsedMs,
-    });
+    if (totalCollectibles > 0 && collectedCount >= totalCollectibles) {
+      total += 300;
+      bonusLines.push({ text: "Full Deploy bonus +300!", isPenalty: false });
+    }
+    // Clean-run bonuses — reward finishing with redundancy to spare, never
+    // touching Root Access, never needing the heal pickup, and finishing
+    // quickly, on top of the completion bonuses above. Each is skipped
+    // entirely (no line, no score) when it comes out to 0.
+    const redundancyBonus = state.redundancy * REDUNDANCY_BONUS_PER_NODE;
+    if (redundancyBonus > 0) {
+      total += redundancyBonus;
+      const nodeWord = state.redundancy === 1 ? "node" : "nodes";
+      bonusLines.push({
+        text: `Redundancy bonus +${redundancyBonus}! (${state.redundancy} ${nodeWord} left)`,
+        isPenalty: false,
+      });
+    }
+    if (!state.usedPower) {
+      total += NO_POWER_BONUS;
+      bonusLines.push({ text: `No Root Access needed +${NO_POWER_BONUS}!`, isPenalty: false });
+    }
+    if (!state.usedHeal) {
+      total += NO_HEAL_BONUS;
+      bonusLines.push({ text: `Self-healing-free +${NO_HEAL_BONUS}!`, isPenalty: false });
+    }
+    const elapsedSeconds = state.elapsedMs / 1000;
+    const speedBonus = Math.max(0, Math.round(SPEED_BONUS_MAX - elapsedSeconds * SPEED_BONUS_DECAY_PER_SEC));
+    if (speedBonus > 0) {
+      total += speedBonus;
+      bonusLines.push({ text: `Speed bonus +${speedBonus}!`, isPenalty: false });
+    }
 
-    let total = bonus + bonusResult.total;
-    bonusLines.push(...bonusResult.lines);
-    const isPerfect = bonusResult.isPerfect;
+    // Shot efficiency — a continuous taper around the level's par
+    // (totalMinShots, accumulated in buildLevel() from each enemy's
+    // configured health): at/under par scores the max bonus, every shot
+    // past it shrinks the bonus, and past the zero crossing it becomes a
+    // growing penalty, floored so spamming fire can't spiral the score
+    // arbitrarily negative.
+    const overPar = state.shotsFired - totalMinShots;
+    const rawShotBonus = overPar <= 0 ? SHOT_BONUS_MAX : Math.round(SHOT_BONUS_MAX - overPar * SHOT_DECAY_PER_SHOT);
+    const shotBonus = Math.max(rawShotBonus, -SHOT_PENALTY_CAP);
+    if (shotBonus !== 0) {
+      total += shotBonus;
+      const text =
+        shotBonus > 0
+          ? `Sharpshooter bonus +${shotBonus}! (${state.shotsFired} shots, par ${totalMinShots})`
+          : `Trigger-happy penalty ${shotBonus}! (${state.shotsFired} shots, par ${totalMinShots})`;
+      bonusLines.push({ text, isPenalty: shotBonus < 0 });
+    }
+    // A deliberate extra nod on top of the curve above, which already caps
+    // out at 0 shots — this calls out the literal zero-shots case by name.
+    if (state.shotsFired === 0) {
+      total += PACIFIST_BONUS;
+      bonusLines.push({ text: `Pacifist bonus +${PACIFIST_BONUS}! Not a single shot fired.`, isPenalty: false });
+    }
+
+    // Cash specifically (totalCash/collectedCash), not totalCollectibles —
+    // that also counts the Root Access key, which would make this
+    // impossible to satisfy alongside !state.usedPower (collecting the key
+    // is what activates it).
+    const isPerfect =
+      defeatedEnemyCount >= totalEnemies &&
+      collectedCash >= totalCash &&
+      !state.tookDamage &&
+      !state.usedPower;
+    if (isPerfect) {
+      total += PERFECT_RUN_BONUS;
+      bonusLines.push({ text: `Perfect Run bonus +${PERFECT_RUN_BONUS}!`, isPenalty: false });
+    }
 
     if (total > 0) state.addScore(total);
     state.win();
@@ -1046,7 +1126,18 @@ function init() {
 
     get("bullet").forEach((bullet) => {
       bullet.pos.x += bullet.dir * BULLET_SPEED * dt();
-      // offscreen({ destroy: true }) component now handles despawn automatically
+      if (bullet.pos.x < -40 || bullet.pos.x > LEVEL_WIDTH + 40) {
+        destroy(bullet);
+        return;
+      }
+      // Player shots shouldn't be able to snipe an enemy that's scrolled
+      // off screen — despawn once a player bullet leaves the visible
+      // camera range (same 40px margin as the level-bounds check above, so
+      // it disappears just past the edge rather than at the exact pixel
+      // boundary). Enemy bullets are unaffected — they're already limited
+      // to short bursts/turret range, not free-flying the whole level.
+      if (bullet.ownerTag !== "player") return;
+      if (bullet.pos.x < camX - VIEW_W / 2 - 40 || bullet.pos.x > camX + VIEW_W / 2 + 40) destroy(bullet);
     });
 
     setCamPos(camX, VIEW_H / 2);
@@ -1104,7 +1195,9 @@ function init() {
   });
 
   onCollide("bullet-player", "ground", (bullet) => destroy(bullet));
+  onCollide("bullet-player", "ground-edge", (bullet) => destroy(bullet));
   onCollide("bullet-enemy", "ground", (bullet) => destroy(bullet));
+  onCollide("bullet-enemy", "ground-edge", (bullet) => destroy(bullet));
 
   onCollide("bullet-enemy", "player", (bullet, playerObj) => {
     destroy(bullet);
