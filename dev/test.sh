@@ -96,6 +96,15 @@ if [ ${#failed_tests[@]} -eq 0 ]; then
   echo "  ✓ ALL TESTS PASSED (${#test_files[@]} suites)"
   echo "════════════════════════════════════════════════════════════════"
   echo ""
+
+  # Write the freshness marker consumed by .claude/hooks/check-test-freshness.sh
+  # — the pre-commit hook compares this hash against the current gated-path
+  # state to know whether a passing run still covers the pending commit.
+  source dev/gate-paths.sh
+  { git ls-files -- "${GATE_PATHS[@]}"; \
+    git ls-files --others --exclude-standard -- "${GATE_PATHS[@]}"; } \
+    2>/dev/null | sort -u | xargs -r sha256sum | sha256sum | awk '{print $1}' > .claude/.test-passed
+  echo "  Test-freshness marker written (.claude/.test-passed)."
   echo "  Safe to commit and push."
   echo ""
   exit 0
