@@ -701,6 +701,122 @@ main.container {
   margin-top: 10px;
 }
 
+/* Skyfire Squadron
+   ========================================================================== */
+
+/* Same spacing as #hero's margin-bottom below — without this, the Games
+   section (inserted directly above Projects in _layouts/home.html) sat
+   flush against it, since neither #games nor #portfolio carries its own
+   margin normally (portfolio-links.html was previously always the last
+   section on the page, with nothing below it needing separation). */
+#games {
+  margin-bottom: 48px;
+}
+
+/* Portrait viewport (see VIEW_W/VIEW_H in javascripts/skyfire-squadron/main.js)
+   — a dedicated modifier rather than editing .game-canvas-frame directly, since
+   the platformer's landscape aspect-ratio is still read by that base rule. */
+.game-canvas-frame--portrait {
+  aspect-ratio: 360 / 560;
+}
+
+#skyfire-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.boss-health-bar {
+  position: absolute;
+  top: 10px;
+  left: 10%;
+  right: 10%;
+  height: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--crimson-deep);
+  background: var(--bg-panel-raised);
+  overflow: hidden;
+  z-index: 4;
+}
+
+.boss-health-bar[hidden] {
+  display: none;
+}
+
+.boss-health-bar__fill {
+  height: 100%;
+  width: 100%;
+  background: var(--red-accent);
+  box-shadow: 0 0 6px rgba(255, 45, 58, 0.6);
+  transition: width 0.2s ease;
+}
+
+/* Plus-shaped 4-directional pad (free 2D movement, unlike the platformer's
+   left/right + jump) laid out on a 3x3 grid with the center cell empty. */
+.touch-dpad {
+  display: grid;
+  grid-template-columns: 52px 52px 52px;
+  grid-template-rows: 52px 52px;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* .touch-btn's base size (64x56, tuned for the platformer's wide jump/shoot
+   buttons) is larger than this grid's own tracks — grid items don't shrink
+   to fit their track just because the track is smaller, so without this
+   override every dpad button overflowed its cell and visually overlapped
+   its neighbors on narrow/mobile viewports. Pinning width/height to exactly
+   the track size (and dropping the inherited padding, which isn't needed
+   for a single centered arrow glyph) fixes that. */
+.touch-dpad .touch-btn {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+}
+
+.touch-dpad__up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.touch-dpad__left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.touch-dpad__right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.touch-dpad__down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.touch-btn--fire {
+  width: auto;
+  padding: 0 14px;
+  color: #ffb14e;
+  border-color: #ffb14e;
+  font-family: var(--font-mono);
+  font-weight: bold;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.touch-btn--bomb {
+  width: auto;
+  padding: 0 14px;
+  color: var(--gold-accent);
+  border-color: var(--gold-accent);
+  font-family: var(--font-mono);
+  font-weight: bold;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
 /* Portfolio
    ========================================================================== */
 

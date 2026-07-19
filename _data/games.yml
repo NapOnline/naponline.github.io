@@ -1,0 +1,5 @@
+---
+- name: Skyfire Squadron
+  link: /games/skyfire-squadron/
+  description: A vertical-scrolling arcade shoot-em-up — dodge bullet patterns, power up, and take down the boss.
+  featured: true

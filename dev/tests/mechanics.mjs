@@ -339,9 +339,17 @@ async function testGunnerOnScreenFiring() {
       }
     }
 
-    // Bring the player back next to the DDoS Bot (on-screen) and confirm it
+    // Bring the player back near the DDoS Bot (on-screen) and confirm it
     // does enter the fire-pose telegraph within one shootIntervalSec cycle.
-    await teleportPlayer(page, gunnerX, 100);
+    // Offset by +140 rather than teleporting to the exact same x: the gunner
+    // patrols ±PATROL_RADIUS (96px, entities.js) around its spawn point, and
+    // the player falls under gravity from y=100 — landing on the same x
+    // column drops it straight through the gunner's hitbox mid-fall,
+    // stomp-killing it (col.isBottom() fires) before any firing behavior can
+    // be observed. +140 clears the gunner's hitbox at every point in its
+    // patrol cycle (96 + combined hitbox half-widths, with margin) while
+    // staying well within isOnScreen()'s camera-relative threshold.
+    await teleportPlayer(page, gunnerX + 140, 100);
     let firedOnScreen = false;
     for (let i = 0; i < 8; i++) {
       await page.waitForTimeout(500);

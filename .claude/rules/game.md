@@ -1,6 +1,7 @@
 ---
 paths:
   - "javascripts/game/**"
+  - "javascripts/skyfire-squadron/**"
 ---
 
 # Kaplay game code — extended context

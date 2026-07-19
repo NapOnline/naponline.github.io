@@ -44,7 +44,7 @@ echo ""
 # 3. Syntax check all game JS files
 echo "[3/4] Checking syntax on all game JS files..."
 failed=0
-for f in javascripts/game/*.js; do
+for f in javascripts/game/*.js javascripts/skyfire-squadron/*.js; do
   if ! node --check "$f" 2>&1; then
     echo "✗ Syntax error in $f"
     failed=1
@@ -74,6 +74,10 @@ test_files=(
   "dev/tests/ui.mjs"
   "dev/tests/persistence.mjs"
   "dev/tests/playthrough.mjs"
+  "dev/tests/skyfire-smoke.mjs"
+  "dev/tests/skyfire-mechanics.mjs"
+  "dev/tests/skyfire-ui.mjs"
+  "dev/tests/skyfire-persistence.mjs"
 )
 
 failed_tests=()

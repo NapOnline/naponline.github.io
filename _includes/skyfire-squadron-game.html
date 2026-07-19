@@ -1,0 +1,51 @@
+<section id="skyfire">
+  <div class="hero-intro">
+    <h1>Skyfire Squadron</h1>
+    <p class="hero-tagline">Dodge the bullet storm, power up, and take down the boss.</p>
+  </div>
+
+  <div class="game-wrap">
+    <div class="game-hud">
+      <span class="hud-item">Score <strong id="skyfire-score">0</strong></span>
+      <span class="hud-item">Best <strong id="skyfire-best">0</strong></span>
+      <span class="hud-item">Lives <strong id="skyfire-lives">3</strong></span>
+      <span class="hud-item">Bombs <strong id="skyfire-bombs">3</strong></span>
+      <span class="hud-item">Weapon <strong id="skyfire-weapon">I</strong></span>
+      <button type="button" class="game-pause-btn" id="skyfire-pause-btn" aria-pressed="false" aria-label="Pause game">&#9208;</button>
+      <button type="button" class="game-mute-btn" id="skyfire-mute" aria-pressed="false" aria-label="Mute sound">&#128266;</button>
+    </div>
+
+    <div class="game-canvas-frame game-canvas-frame--portrait">
+      <canvas id="skyfire-canvas" role="img" aria-label="Skyfire Squadron game board"></canvas>
+      <div class="boss-health-bar" id="skyfire-boss-health" hidden>
+        <div class="boss-health-bar__fill" id="skyfire-boss-health-fill"></div>
+      </div>
+      <div class="game-pause-overlay" id="skyfire-pause-overlay" hidden>
+        <p class="game-pause-overlay__msg">Paused</p>
+        <button type="button" class="btn btn-outline" id="skyfire-resume">Resume</button>
+      </div>
+      <div class="game-overlay" id="skyfire-overlay">
+        <button type="button" class="btn btn-primary" id="skyfire-start">Start Game</button>
+        <p class="game-overlay__msg" id="skyfire-message"></p>
+        <p class="game-overlay__stats" id="skyfire-stats" hidden></p>
+        <ol class="game-highscores" id="skyfire-highscores" hidden></ol>
+      </div>
+    </div>
+
+    <div class="game-touch-controls" id="skyfire-touch-controls">
+      <div class="touch-dpad">
+        <button type="button" class="touch-btn touch-dpad__up" data-action="up" aria-label="Move up">&#9650;</button>
+        <button type="button" class="touch-btn touch-dpad__left" data-action="left" aria-label="Move left">&#9664;</button>
+        <button type="button" class="touch-btn touch-dpad__right" data-action="right" aria-label="Move right">&#9654;</button>
+        <button type="button" class="touch-btn touch-dpad__down" data-action="down" aria-label="Move down">&#9660;</button>
+      </div>
+      <div class="touch-row">
+        <button type="button" class="touch-btn touch-btn--fire" data-action="fire" aria-label="Fire">FIRE</button>
+        <button type="button" class="touch-btn touch-btn--bomb" data-action="bomb" aria-label="Bomb">BOMB</button>
+      </div>
+    </div>
+    <p class="game-hint">Arrow keys / WASD to move, Space to fire, B to bomb, Esc to pause &mdash; on touch devices, use the pad above.</p>
+  </div>
+
+  <script type="module" src="{{ '/javascripts/skyfire-squadron/main.js' | relative_url }}"></script>
+</section>

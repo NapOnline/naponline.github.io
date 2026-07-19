@@ -1,0 +1,11 @@
+<section id="games" aria-labelledby="games-heading">
+  <h2 id="games-heading">Games</h2>
+  <div class="portfolio-grid">
+    {% for g in site.data.games %}
+    <a class="portfolio-card{% if g.featured %} portfolio-card--featured{% endif %}" href="{{ g.link }}">
+      <h3>{{ g.name }}</h3>
+      <p>{{ g.description }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
