@@ -2,7 +2,7 @@
 /**
  * UI test suite for Skyfire Squadron — pause/resume, mute toggle +
  * persistence, touch controls presence, canvas resize, overlay
- * visibility/messaging, and the boss health bar's show/hide behavior.
+ * visibility/messaging, and the stage HUD readout.
  */
 
 import {
@@ -10,10 +10,9 @@ import {
   navigateToGame,
   clearStorage,
   startGame,
-  getGameState,
-  skipToBoss,
+  waitForGameLoopReady,
   forceHit,
-  callDefeatBoss,
+  advanceToStage,
   isElementVisible,
   getElementText,
   getStorageValue,
@@ -35,6 +34,7 @@ async function withGame(fn) {
     await navigateToGame(page, true);
     await clearStorage(page);
     await startGame(page);
+    await waitForGameLoopReady(page);
     await fn(page);
   } catch (err) {
     record(fn.name || 'test', false, err.message);
@@ -108,32 +108,15 @@ async function testGameOverOverlayMessaging() {
   });
 }
 
-async function testBossHealthBarVisibility() {
+async function testStageHudReadout() {
   await withGame(async (page) => {
-    const beforeBoss = await isElementVisible(page, '#skyfire-boss-health');
-    record('boss health bar hidden before boss spawns', !beforeBoss, `visible=${beforeBoss}`);
+    const initialText = await getElementText(page, '#skyfire-stage');
+    record('stage HUD reads 1 at round start', initialText === '1', `text=${initialText}`);
 
-    await skipToBoss(page);
-    await page.waitForTimeout(400);
-    const duringBoss = await isElementVisible(page, '#skyfire-boss-health');
-    record('boss health bar visible once boss spawns', duringBoss, `visible=${duringBoss}`);
-
-    const fillWidth = await page.evaluate(() => document.getElementById('skyfire-boss-health-fill').style.width);
-    record('boss health bar fill reflects full health', fillWidth === '100%', `width=${fillWidth}`);
-
-    await callDefeatBoss(page);
-    const afterBoss = await isElementVisible(page, '#skyfire-boss-health');
-    record('boss health bar hides again after defeat', !afterBoss, `visible=${afterBoss}`);
-
-    // defeatBoss() now plays a staggered multi-burst finale (4 bursts at
-    // 0.18s apart + a final blast, then a 0.5s grace period — see main.js)
-    // before the win overlay's DOM reveal, so it doesn't visually cover the
-    // finale. Game state/score/high-score persistence already updated
-    // synchronously above; only the overlay itself needs this wait.
-    await page.waitForTimeout(1400);
-    const winVisible = await isElementVisible(page, '#skyfire-overlay');
-    const winMessage = await getElementText(page, '#skyfire-message');
-    record('win overlay shows Stage Clear message', winVisible && /stage clear/i.test(winMessage ?? ''), winMessage);
+    await advanceToStage(page, 7);
+    await page.waitForTimeout(100);
+    const afterText = await getElementText(page, '#skyfire-stage');
+    record('stage HUD updates as the run advances', afterText === '7', `text=${afterText}`);
   });
 }
 
@@ -145,7 +128,7 @@ async function runAllTests() {
   await testTouchControlsPresent();
   await testCanvasResize();
   await testGameOverOverlayMessaging();
-  await testBossHealthBarVisibility();
+  await testStageHudReadout();
 
   console.log(`\n📊 Results: ${passCount} passed, ${failCount} failed\n`);
   process.exit(failCount > 0 ? 1 : 0);

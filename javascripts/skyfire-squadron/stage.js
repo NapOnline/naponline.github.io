@@ -1,85 +1,125 @@
-// The "level" for this game: a time-indexed enemy spawn schedule, playing
-// the same role level.js's hand-authored ASCII tile map plays for the
-// platformer — except this genre's natural fit is a continuous timeline of
-// spawns rather than a static grid (see main.js's top-of-file comment on why
-// this game deliberately never calls addLevel()).
+// The "level" for this game: instead of one authored, fixed-length
+// SPAWN_TIMELINE ending in a single boss (the previous design), Skyfire
+// Squadron is endless — generateStageTimeline() procedurally builds a fresh
+// { durationMs, timeline } for whatever stage number main.js asks for, and
+// main.js just keeps asking for the next one as each stage's duration
+// elapses (see resetStageState()/advanceStage() in main.js). Same entry
+// shape as before — { tMs, type, x } — so main.js's single-pointer
+// walk-forward consumer (see stage.js's old header comment) needed no
+// changes.
 //
-// Each entry is { tMs, type, x } — tMs is elapsed stage time in ms, type is
-// an ENEMY_CONFIGS key (or "powerup"), x is a 0-1 fraction of the viewport
-// width the spawn is centered on. main.js consumes this by walking a single
-// pointer forward through the (already time-sorted) array as elapsedMs
-// advances — never re-scanning from the start — so it stays cheap
-// regardless of stage length.
-//
-// Built with small helpers rather than one giant hand-typed literal, same
-// spirit as level.js's "generated with a small script to guarantee
-// alignment" note — a wave of N evenly-spaced drones is much easier to get
-// right (and to retune) as `droneWave(t, count)` than as N separate lines.
-function droneWave(tMs, count, spreadStart = 0.15, spreadEnd = 0.85) {
-  const entries = [];
-  for (let i = 0; i < count; i++) {
-    const x = count === 1 ? 0.5 : spreadStart + ((spreadEnd - spreadStart) * i) / (count - 1);
-    entries.push({ tMs: tMs + i * 220, type: "drone", x });
+// A small seeded PRNG (mulberry32) drives all of this, rather than Kaplay's
+// own rand()/Math.random() — tests need a stage's generated layout to be
+// reproducible (see dev/tests/skyfire-helpers.mjs's setSeed()), which an
+// unseeded RNG can't give them. main.js creates one rng() per game session
+// (reseeded on resetRound()) and threads it through every generateStageTimeline()
+// call.
+export function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function rng() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function rand(rng, min, max) {
+  return min + rng() * (max - min);
+}
+
+function pick(rng, arr) {
+  return arr[Math.floor(rng() * arr.length)];
+}
+
+// Enemy archetypes unlock progressively — one newly-available type every 2
+// stages until all 8 are in the pool, so early stages stay simple and each
+// unlock still feels distinct instead of every enemy showing up on stage 1.
+// Keys match entities.js's ENEMY_CONFIGS.
+export const ENEMY_UNLOCK_SCHEDULE = [
+  { stage: 1, types: ["scout", "interceptor"] },
+  { stage: 3, types: ["swarmer"] },
+  { stage: 5, types: ["bulwark"] },
+  { stage: 7, types: ["lancer"] },
+  { stage: 9, types: ["gunship"] },
+  { stage: 11, types: ["phantom"] },
+  { stage: 13, types: ["dreadnought"] },
+];
+
+// Power-ups unlock one at a time too, one per stage, so a run keeps finding
+// something new for a while rather than every effect being available at
+// once. Keys match entities.js's POWERUP_CONFIGS.
+export const POWERUP_UNLOCK_SCHEDULE = [
+  { stage: 1, types: ["spread_shot", "rapid_fire"] },
+  { stage: 2, types: ["shield_booster"] },
+  { stage: 3, types: ["speed_booster"] },
+  { stage: 4, types: ["smart_bomb_reload"] },
+  { stage: 5, types: ["armor_plating"] },
+  { stage: 6, types: ["score_multiplier"] },
+  { stage: 7, types: ["invincibility"] },
+  { stage: 8, types: ["time_dilation"] },
+  { stage: 9, types: ["giga_laser"] },
+];
+
+function unlockedPool(schedule, stageNumber) {
+  const pool = [];
+  for (const entry of schedule) {
+    if (entry.stage <= stageNumber) pool.push(...entry.types);
   }
-  return entries;
+  return pool;
 }
 
-function fighterPair(tMs) {
-  return [
-    { tMs, type: "fighter", x: 0.25 },
-    { tMs: tMs + 300, type: "fighter", x: 0.75 },
-  ];
+export function unlockedEnemyTypes(stageNumber) {
+  return unlockedPool(ENEMY_UNLOCK_SCHEDULE, stageNumber);
 }
 
-export const STAGE_DURATION_MS = 60000;
+export function unlockedPowerupTypes(stageNumber) {
+  return unlockedPool(POWERUP_UNLOCK_SCHEDULE, stageNumber);
+}
 
-export const SPAWN_TIMELINE = [
-  ...droneWave(1000, 4),
-  { tMs: 4000, type: "powerup", x: 0.5 },
-  ...droneWave(6000, 5),
-  ...fighterPair(10000),
-  ...droneWave(13000, 3, 0.2, 0.5),
-  { tMs: 15000, type: "gunship", x: 0.5 },
-  ...fighterPair(18500),
-  ...droneWave(21000, 5),
-  { tMs: 24000, type: "powerup", x: 0.3 },
-  { tMs: 26000, type: "gunship", x: 0.25 },
-  { tMs: 26500, type: "gunship", x: 0.75 },
-  ...fighterPair(30000),
-  ...droneWave(33000, 6),
-  ...fighterPair(36500),
-  { tMs: 39000, type: "gunship", x: 0.5 },
-  { tMs: 41000, type: "powerup", x: 0.7 },
-  ...droneWave(43000, 5, 0.1, 0.9),
-  ...fighterPair(46500),
-  { tMs: 49000, type: "gunship", x: 0.35 },
-  { tMs: 49500, type: "gunship", x: 0.65 },
-  ...droneWave(52000, 6, 0.1, 0.9),
-  ...fighterPair(55000),
-  { tMs: 57000, type: "powerup", x: 0.5 },
-].sort((a, b) => a.tMs - b.tMs);
+const BASE_STAGE_DURATION_MS = 42000;
+const BASE_SPAWN_COUNT = 10;
+const MAX_SPAWN_COUNT = 34;
+const MAX_DIFFICULTY_MULTIPLIER = 2.6;
 
-// Boss health and its two attack phases — phase 2 kicks in once health
-// drops to hpThreshold or below (fractions of BOSS_CONFIG.hp). Faster/aimed
-// fire in phase 2 mirrors the platformer's outage-turret telegraph
-// convention (a brief warning tint before each volley — see main.js).
-export const BOSS_CONFIG = {
-  hp: 60,
-  scoreValue: 1000,
-  phases: [
-    {
-      hpThreshold: 1, // full health down to 50%
-      shootIntervalSec: 1.8,
-      telegraphSec: 0.4,
-      pattern: "spread",
-      bulletSpeed: 160,
-    },
-    {
-      hpThreshold: 0.5, // 50% health down to 0
-      shootIntervalSec: 1.0,
-      telegraphSec: 0.25,
-      pattern: "aimed",
-      bulletSpeed: 220,
-    },
-  ],
-};
+// Speed/health multiplier applied to every enemy spawned this stage (see
+// entities.js's createEnemy()) — grows with stage number, capped so endless
+// play never becomes literally unwinnable at the tuning level.
+export function difficultyMultiplier(stageNumber) {
+  return Math.min(1 + (stageNumber - 1) * 0.06, MAX_DIFFICULTY_MULTIPLIER);
+}
+
+// One power-up roughly every 9-12s of stage duration.
+const POWERUP_INTERVAL_SEC = [9, 12];
+
+export function generateStageTimeline(stageNumber, rng) {
+  const durationMs = BASE_STAGE_DURATION_MS;
+  const enemyPool = unlockedEnemyTypes(stageNumber);
+  const powerupPool = unlockedPowerupTypes(stageNumber);
+  const spawnCount = Math.min(MAX_SPAWN_COUNT, Math.round(BASE_SPAWN_COUNT + stageNumber * 1.8));
+
+  const timeline = [];
+
+  // Enemy spawns: divide the stage into `spawnCount` even slots and jitter
+  // within each one (rather than pure-random timing) so two spawns can
+  // never land unfairly close together regardless of how unlucky the RNG
+  // gets.
+  const slotMs = durationMs / spawnCount;
+  for (let i = 0; i < spawnCount; i++) {
+    const tMs = Math.round(i * slotMs + rand(rng, slotMs * 0.15, slotMs * 0.75));
+    const type = pick(rng, enemyPool);
+    const x = rand(rng, 0.12, 0.88);
+    timeline.push({ tMs, type, x });
+  }
+
+  // Power-up drops, independent cadence from enemy spawns.
+  let tMs = rand(rng, 3000, 6000);
+  while (tMs < durationMs - 2000) {
+    timeline.push({ tMs: Math.round(tMs), type: "powerup", powerupType: pick(rng, powerupPool), x: rand(rng, 0.15, 0.85) });
+    tMs += rand(rng, POWERUP_INTERVAL_SEC[0], POWERUP_INTERVAL_SEC[1]) * 1000;
+  }
+
+  timeline.sort((a, b) => a.tMs - b.tMs);
+  return { durationMs, timeline };
+}

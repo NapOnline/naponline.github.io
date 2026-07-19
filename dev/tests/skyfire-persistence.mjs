@@ -17,8 +17,7 @@ import {
   clearStorage,
   startGame as startSkyfire,
   setGameState,
-  skipToBoss,
-  callDefeatBoss,
+  forceHit as forceHitSkyfire,
   getStorageValue,
   reportTest,
 } from './skyfire-helpers.mjs';
@@ -44,13 +43,12 @@ function record(name, passed, message = '') {
   else failCount++;
 }
 
-// defeatBoss() adds BOSS_CONFIG.scoreValue (1000) directly, then winRound()
-// adds STAGE_CLEAR_BONUS + NO_DEATH_BONUS (500 + 500, since a fresh
-// startGame() round never takes damage here) — a constant offset on top of
-// whatever base score is set via setGameState() beforehand, so relative
-// ordering across rounds is preserved.
-const WIN_BONUS = 2000;
-
+// Endless mode has no "win" checkpoint to route through (see state.js — only
+// READY/PLAYING/LOSE exist now) — a round ends by dying, so driving lives to
+// 0 via 3 forced hits is the whole setup, and the final score is exactly
+// whatever setGameState() put there (no stage-clear/win bonus math to
+// replicate here anymore, unlike the old boss-defeat pipeline this test used
+// to route through).
 async function testHighScoreSortAndTruncate() {
   const { browser, page } = await launchTestBrowser(true);
   try {
@@ -61,9 +59,9 @@ async function testHighScoreSortAndTruncate() {
     for (const base of baseScores) {
       await startSkyfire(page);
       await setGameState(page, { score: base });
-      await skipToBoss(page);
-      await page.waitForTimeout(300);
-      await callDefeatBoss(page);
+      await forceHitSkyfire(page);
+      await forceHitSkyfire(page);
+      await forceHitSkyfire(page);
     }
 
     const raw = await getStorageValue(page, SKYFIRE_SCORE_KEY);
@@ -71,7 +69,7 @@ async function testHighScoreSortAndTruncate() {
     record('high score list truncates to top 5', list.length === 5, `length=${list.length}`);
 
     const scores = list.map((e) => e.score);
-    const expectedTop5 = baseScores.map((b) => b + WIN_BONUS).sort((a, b) => b - a).slice(0, 5);
+    const expectedTop5 = [...baseScores].sort((a, b) => b - a).slice(0, 5);
     record('high score list holds the top 5 scores, sorted descending', JSON.stringify(scores) === JSON.stringify(expectedTop5), `${JSON.stringify(scores)} vs expected ${JSON.stringify(expectedTop5)}`);
 
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -119,15 +117,15 @@ async function testStorageIsolationFromPlatformer() {
     await navigateToSkyfire(page, true);
     await startSkyfire(page);
     await setGameState(page, { score: 4242 });
-    await skipToBoss(page);
-    await page.waitForTimeout(300);
-    await callDefeatBoss(page);
+    await forceHitSkyfire(page);
+    await forceHitSkyfire(page);
+    await forceHitSkyfire(page);
 
     const skyfireScore = await getStorageValue(page, SKYFIRE_SCORE_KEY);
     const platformerScoreAfterSkyfireWin = await getPlatformerStorageValue(page, PLATFORMER_SCORE_KEY);
 
-    record('skyfire win writes its own distinct high-score key', typeof skyfireScore === 'string' && skyfireScore.includes('6242'), skyfireScore);
-    record("skyfire's win does not touch the platformer's high-score key", platformerScoreAfterSkyfireWin === platformerScoreAfterPlatformerWin, `${platformerScoreAfterPlatformerWin} -> ${platformerScoreAfterSkyfireWin}`);
+    record('skyfire game-over writes its own distinct high-score key', typeof skyfireScore === 'string' && skyfireScore.includes('4242'), skyfireScore);
+    record("skyfire's game-over does not touch the platformer's high-score key", platformerScoreAfterSkyfireWin === platformerScoreAfterPlatformerWin, `${platformerScoreAfterPlatformerWin} -> ${platformerScoreAfterSkyfireWin}`);
 
     await navigateToPlatformer(page, true);
     const platformerScoreFinal = await getPlatformerStorageValue(page, PLATFORMER_SCORE_KEY);

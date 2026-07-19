@@ -2,6 +2,7 @@
 *.lock
 _site/**
 dev/tests/node_modules/
+__pycache__/
 .claude/settings.local.json
 .claude/.test-passed
 .claude/skip-test-gate

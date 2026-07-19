@@ -74,10 +74,6 @@ export async function killAllEnemies(page) {
   await page.evaluate(() => window.__skyfireGameDebug?.killAllEnemies?.());
 }
 
-export async function skipToBoss(page) {
-  await page.evaluate(() => window.__skyfireGameDebug?.skipToBoss?.());
-}
-
 export async function forceHit(page) {
   await page.evaluate(() => window.__skyfireGameDebug?.forceHit?.());
 }
@@ -90,12 +86,21 @@ export async function raiseWeaponLevel(page) {
   await page.evaluate(() => window.__skyfireGameDebug?.raiseWeaponLevel?.());
 }
 
-export async function callWinRound(page) {
-  await page.evaluate(() => window.__skyfireGameDebug?.winRound?.());
+export async function applyPowerUp(page, type) {
+  await page.evaluate((t) => window.__skyfireGameDebug?.applyPowerUp?.(t), type);
 }
 
-export async function callDefeatBoss(page) {
-  await page.evaluate(() => window.__skyfireGameDebug?.defeatBoss?.());
+// Seeds the stage-generation RNG — call *after* startGame() (which reseeds
+// it from Date.now() via resetRound()), then advanceToStage() for a
+// reproducible stage layout. See stage.js's mulberry32()/generateStageTimeline().
+export async function setSeed(page, seed) {
+  await page.evaluate((s) => window.__skyfireGameDebug?.setSeed?.(s), seed);
+}
+
+// Endless-mode replacement for the old single-boss skipToBoss() hook — jumps
+// straight to stage n's freshly-generated timeline.
+export async function advanceToStage(page, n) {
+  await page.evaluate((num) => window.__skyfireGameDebug?.advanceToStage?.(num), n);
 }
 
 export async function countTag(page, tag) {
@@ -143,6 +148,21 @@ export async function startGame(page) {
       const overlay = document.getElementById('skyfire-overlay');
       return overlay && overlay.hidden;
     },
+    { timeout: TIMEOUT_MS }
+  );
+}
+
+// The debug hook (window.__skyfireGameDebug) exists as soon as init() runs,
+// but Kaplay's own onUpdate() loop only starts *ticking* once the sizeable
+// sprite set this game now loads has decoded/uploaded — a real, measured
+// ~700ms on this dev setup, not a bug (see the "why" in the session this was
+// added). Tests that assert something only the update loop produces
+// (movement clamping, bullet firing, the stage HUD text, all gated on
+// elapsedMs actually advancing) should call this right after startGame()
+// instead of guessing a fixed wait.
+export async function waitForGameLoopReady(page) {
+  await page.waitForFunction(
+    () => (window.__skyfireGameDebug?.getState?.()?.elapsedMs ?? 0) > 0,
     { timeout: TIMEOUT_MS }
   );
 }

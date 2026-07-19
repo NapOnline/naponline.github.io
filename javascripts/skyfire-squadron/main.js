@@ -3,20 +3,18 @@ import {
   PLAYER_WIDTH,
   PLAYER_HEIGHT,
   createPlayerShip,
+  updatePlayerPose,
   ENEMY_CONFIGS,
   ENEMY_HIT_FLASH_MS,
   createEnemy,
-  BOSS_WIDTH,
-  BOSS_HEIGHT,
-  createBoss,
   createBullet,
   createPowerUp,
+  POWERUP_TYPES,
   spawnPowerUpSparkle,
   spawnFireBurst,
-  spawnFireSmokeBurst,
   spawnKillEffect,
 } from "./entities.js";
-import { STAGE_DURATION_MS, SPAWN_TIMELINE, BOSS_CONFIG } from "./stage.js";
+import { mulberry32, generateStageTimeline, difficultyMultiplier } from "./stage.js";
 import { GameState, STATES, MAX_LIVES, MAX_BOMBS } from "./state.js";
 import { setupTouchControls } from "./input.js";
 import { loadHighScores, submitHighScore, getTopScore } from "./highscores.js";
@@ -25,24 +23,33 @@ import * as audio from "./audio.js";
 // This game deliberately never calls addLevel() (see CLAUDE.md/.claude/rules/
 // game.md's addLevel()-once discipline, written for the platformer's static
 // tile-based level). A vertical shmup's natural spawning model is a
-// continuous time-scheduled stream of enemies (see stage.js's SPAWN_TIMELINE),
-// not an authored grid — so every entity here (player, enemies, boss,
-// bullets, powerups) is a plain runtime object managed with ordinary add()/
-// destroy() calls. Zero addLevel() calls trivially satisfies "at most once";
-// this is a deliberate genre-driven choice, not an oversight, and it's also
-// why resetRound() below can freely destroy()/recreate everything on a
-// restart instead of needing the platformer's hide/pause/reposition dance.
+// continuous time-scheduled stream of enemies (see stage.js's
+// generateStageTimeline()), not an authored grid — so every entity here
+// (player, enemies, bullets, powerups) is a plain runtime object managed
+// with ordinary add()/destroy() calls. Zero addLevel() calls trivially
+// satisfies "at most once"; this is a deliberate genre-driven choice, not an
+// oversight, and it's also why resetRound() below can freely destroy()/
+// recreate everything on a restart instead of needing the platformer's
+// hide/pause/reposition dance.
+//
+// Endless structure: there is no boss and no WIN state (see state.js) — a
+// run is a sequence of procedurally-generated stages of fixed duration each,
+// getting harder forever via stage.js's difficultyMultiplier() and its
+// enemy/power-up unlock schedules, until the player dies (LOSE). See
+// startStage()/maybeAdvanceStage() below.
 
 const VIEW_W = 360;
 const VIEW_H = 560;
 
 const PLAYER_SPEED = 220;
+const PLAYER_SPEED_BOOST_MULT = 1.55;
 const PLAYER_MIN_X = 12;
 const PLAYER_MAX_X = VIEW_W - 12 - PLAYER_WIDTH;
 const PLAYER_MIN_Y = Math.round(VIEW_H * 0.32);
 const PLAYER_MAX_Y = VIEW_H - 20 - PLAYER_HEIGHT;
 
 const SHOOT_COOLDOWN_MS = 200;
+const RAPID_FIRE_COOLDOWN_MS = 90;
 const PLAYER_BULLET_SPEED = 480;
 // Per-weaponLevel (1-3) horizontal velocity fan for the player's shots —
 // index 0 is a single straight shot, index 1 a 3-way spread, index 2 a
@@ -51,10 +58,21 @@ const WEAPON_SPREADS = [[0], [-90, 0, 90], [-170, -85, 0, 85, 170]];
 const WEAPON_LABELS = ["I", "II", "III"];
 
 const HIT_INVINCIBLE_MS = 1600;
-const NO_DEATH_BONUS = 500;
-const STAGE_CLEAR_BONUS = 500;
 const BOMB_ENEMY_DAMAGE = 3;
-const BOMB_BOSS_DAMAGE = 8;
+
+// Power-up buff durations (ms) — see entities.js's POWERUP_TYPES and
+// applyPowerUp() below.
+const POWERUP_DURATIONS_MS = {
+  rapid_fire: 8000,
+  invincibility: 6000,
+  speed_booster: 8000,
+  score_multiplier: 10000,
+  time_dilation: 6000,
+  giga_laser: 7000,
+};
+const SLOW_MO_ENEMY_SCALE = 0.45;
+
+const STAGE_BANNER_LIFE_MS = 1600;
 
 // Three-layer parallax (nebula, the original dot-starfield, a sparser
 // brighter near layer), slowest to fastest, furthest back to closest — see
@@ -73,6 +91,42 @@ const BG_ASTEROID_SPRITES = ["bg-asteroid-1", "bg-asteroid-2"];
 const BG_PLANET_SPRITES = ["bg-planet-1", "bg-planet-2"];
 
 const ASSET_BASE = new URL("./assets/", import.meta.url).href;
+
+// Every ship (player + one per ENEMY_CONFIGS archetype) shares this named
+// frame set — see dev/generate-skyfire-sheet-assets.py's SHIP_NAMES. Only
+// the frames actually used in-game are loaded (not e.g. the side-view rows
+// or the full 7-frame firing sequence).
+const SHIP_FRAMES = [
+  "idle",
+  "thrust_1",
+  "thrust_2",
+  "thrust_3",
+  "damaged_1",
+  "damaged_2",
+  "damaged_3",
+  "explode_1",
+  "explode_2",
+  "explode_3",
+  "explode_4",
+  "explode_5",
+  "explode_6",
+  "explode_7",
+];
+
+// One assigned bullet sprite per firing enemy archetype (Scout never fires),
+// plus the player's default + Giga-Laser power-up bullet — see entities.js's
+// ENEMY_CONFIGS.bulletSprite for the sprite-key side of this mapping.
+const BULLET_SPRITE_SOURCES = {
+  "player-bullet-standard": "bullets/bullets1/standard_1.png",
+  "player-bullet-giga": "bullets/bullets1/energy_lance_1.png",
+  "enemy-bullet-interceptor": "bullets/bullets4/ap_round_e4.png",
+  "enemy-bullet-swarmer": "bullets/bullets2/burst_1.png",
+  "enemy-bullet-bulwark": "bullets/bullets3/cluster_1.png",
+  "enemy-bullet-lancer": "bullets/bullets2/quasar_plasma_1.png",
+  "enemy-bullet-gunship": "bullets/bullets4/incendiary_e5.png",
+  "enemy-bullet-phantom": "bullets/bullets2/beam_pulse_1.png",
+  "enemy-bullet-dreadnought": "bullets/bullets3/incendiary_1.png",
+};
 
 // Responsive canvas sizing — same technique as javascripts/game/main.js's
 // layoutCanvas(): the frame's pixel height is computed explicitly from its
@@ -104,8 +158,7 @@ function init() {
   const livesEl = document.getElementById("skyfire-lives");
   const bombsEl = document.getElementById("skyfire-bombs");
   const weaponEl = document.getElementById("skyfire-weapon");
-  const bossHealthEl = document.getElementById("skyfire-boss-health");
-  const bossHealthFillEl = document.getElementById("skyfire-boss-health-fill");
+  const stageEl = document.getElementById("skyfire-stage");
   const overlayEl = document.getElementById("skyfire-overlay");
   const messageEl = document.getElementById("skyfire-message");
   const statsEl = document.getElementById("skyfire-stats");
@@ -122,7 +175,17 @@ function init() {
     width: VIEW_W,
     height: VIEW_H,
     background: [8, 6, 16],
-    crisp: true,
+    // Kaplay defaults every texture to nearest-neighbor filtering (good for
+    // blocky pixel art, the old placeholder sprites this game used to ship
+    // with) — but the sliced ship/bullet/powerup art
+    // (dev/generate-skyfire-sheet-assets.py) is painterly, hand-illustrated
+    // art at 200-400px source rendered down to 30-65px in-game, and nearest-
+    // neighbor minification at that ratio just discards most of the detail
+    // (aliasing/noise) instead of blending it — hence "linear" here.
+    // `crisp` (image-rendering: pixelated on the canvas element, a *separate*
+    // browser-CSS upscale from the internal WebGL texture filtering above) is
+    // dropped for the same reason: this art was never meant to look blocky.
+    texFilter: "linear",
     global: true,
     stretch: true,
     buttons: {
@@ -135,20 +198,16 @@ function init() {
     },
   });
 
-  loadSprite("player-ship", `${ASSET_BASE}player-ship.png`);
-  Object.values(ENEMY_CONFIGS).forEach((config) => {
-    loadSprite(config.sprite, `${ASSET_BASE}${config.sprite}.png`);
-    for (let i = 0; i < 4; i++) {
-      loadSprite(`${config.sprite}-fragment-${i}`, `${ASSET_BASE}${config.sprite}-fragment-${i}.png`);
-    }
+  const shipIds = ["player", ...new Set(Object.values(ENEMY_CONFIGS).map((c) => c.shipId))];
+  shipIds.forEach((shipId) => {
+    SHIP_FRAMES.forEach((frame) => {
+      loadSprite(`${shipId}-${frame}`, `${ASSET_BASE}ships/${shipId}/${frame}.png`);
+    });
   });
-  loadSprite("boss", `${ASSET_BASE}boss.png`);
-  for (let i = 0; i < 4; i++) {
-    loadSprite(`boss-fragment-${i}`, `${ASSET_BASE}boss-fragment-${i}.png`);
-  }
-  loadSprite("bullet-player", `${ASSET_BASE}bullet-player.png`);
-  loadSprite("bullet-enemy", `${ASSET_BASE}bullet-enemy.png`);
-  loadSprite("powerup-weapon", `${ASSET_BASE}powerup-weapon.png`);
+  Object.entries(BULLET_SPRITE_SOURCES).forEach(([key, path]) => {
+    loadSprite(key, `${ASSET_BASE}${path}`);
+  });
+  POWERUP_TYPES.forEach((type) => loadSprite(`powerup-${type}`, `${ASSET_BASE}powerups/${type}.png`));
   loadSprite("bg-starfield", `${ASSET_BASE}bg-starfield.png`);
   loadSprite("bg-nebula", `${ASSET_BASE}bg-nebula.png`);
   loadSprite("bg-stars-bright", `${ASSET_BASE}bg-stars-bright.png`);
@@ -162,12 +221,24 @@ function init() {
   let player;
   const playerSpawn = { x: VIEW_W / 2, y: VIEW_H - 80 };
   let shootCooldownMs = 0;
-  let spawnPointer = 0;
-  let boss = null;
-  let bossSpawned = false;
   let bgLayers = [];
   let asteroidTimerSec = rand(BG_ASTEROID_INTERVAL_SEC[0], BG_ASTEROID_INTERVAL_SEC[1]);
   let planetTimerSec = rand(BG_PLANET_INTERVAL_SEC[0], BG_PLANET_INTERVAL_SEC[1]);
+
+  // Seeded RNG driving stage.js's procedural generation — reseeded on every
+  // resetRound() so a fresh run doesn't inherit the previous run's sequence.
+  // Overridable via the debug hook's setSeed() so tests can request a
+  // reproducible stage layout (see dev/tests/skyfire-helpers.mjs).
+  let rngSeed = (Date.now() ^ 0x9e3779b9) >>> 0;
+  let rng = mulberry32(rngSeed);
+  let stageTimeline = [];
+  let stageDurationMs = 0;
+  let stageElapsedMs = 0;
+  let spawnPointer = 0;
+
+  function getTimeScale() {
+    return state.isSlowMo ? SLOW_MO_ENEMY_SCALE : 1;
+  }
 
   // One layer's worth of the tiled-sprite vertical wrap components — a
   // fixed camera (unlike the platformer's horizontally-scrolling one) means
@@ -195,6 +266,17 @@ function init() {
     ];
 
     player = createPlayerShip(playerSpawn.x - PLAYER_WIDTH / 2, playerSpawn.y - PLAYER_HEIGHT / 2);
+
+    // Generates stage 1's timeline up front, the same "ready before Start is
+    // even clickable" treatment as the player ship above — startGame()'s
+    // `if (state.isOver || !player)` guard around resetRound() only re-fires
+    // on a *restart* (once state.isOver or a missing player is true), so
+    // without this, the very first-ever "Start Game" click would never
+    // generate stage 1's timeline at all: stageDurationMs would still be its
+    // initial 0, and maybeAdvanceStage()'s `stageElapsedMs >= stageDurationMs`
+    // check (0 >= 0) would fire on the first onUpdate tick and silently skip
+    // straight to stage 2.
+    startStage(1);
   }
 
   function scrollLayerPair(a, b, speed, deltaTime) {
@@ -255,10 +337,39 @@ function init() {
     });
   }
 
-  function updateBossHealthBar() {
-    if (!boss || !bossHealthFillEl) return;
-    const pct = Math.max(0, (boss.health / boss.maxHealth) * 100);
-    bossHealthFillEl.style.width = `${pct}%`;
+  // A brief on-canvas "STAGE N" banner between stages — same one-shot
+  // manual-fade add() idiom as every other fx object in entities.js (no
+  // tween()), just living in main.js since it needs no game-object state
+  // beyond the stage number.
+  function showStageBanner(stageNumber) {
+    const banner = add([
+      pos(VIEW_W / 2, VIEW_H / 2 - 70),
+      anchor("center"),
+      text(`STAGE ${stageNumber}`, { size: 26 }),
+      color(255, 225, 140),
+      opacity(1),
+      z(50),
+      "fx",
+      { lifeMs: STAGE_BANNER_LIFE_MS },
+    ]);
+    banner.onUpdate(() => {
+      banner.lifeMs -= dt() * 1000;
+      banner.opacity = Math.max(0, Math.min(1, banner.lifeMs / STAGE_BANNER_LIFE_MS));
+      if (banner.lifeMs <= 0) destroy(banner);
+    });
+  }
+
+  // Generates stage `stageNumber`'s procedural timeline and makes it the
+  // active one — called for stage 1 on every resetRound() and again every
+  // time maybeAdvanceStage() below decides the current stage is done.
+  function startStage(stageNumber, { announce = false } = {}) {
+    state.stage = stageNumber;
+    const generated = generateStageTimeline(stageNumber, rng);
+    stageDurationMs = generated.durationMs;
+    stageTimeline = generated.timeline;
+    stageElapsedMs = 0;
+    spawnPointer = 0;
+    if (announce) showStageBanner(stageNumber);
   }
 
   function spawnFromEntry(entry) {
@@ -266,31 +377,32 @@ function init() {
       // createPowerUp() is anchor("center")-based (see entities.js), unlike
       // every other spawn call here — entry.x's normalized position maps
       // directly to the pickup's center with no half-width offset needed.
-      createPowerUp(entry.x * VIEW_W, -30);
+      createPowerUp(entry.x * VIEW_W, -30, entry.powerupType);
       return;
     }
     const config = ENEMY_CONFIGS[entry.type];
-    createEnemy(entry.type, entry.x * (VIEW_W - config.width), -config.height);
-  }
-
-  function spawnBoss() {
-    boss = createBoss(VIEW_W / 2 - BOSS_WIDTH / 2, -BOSS_HEIGHT - 20, BOSS_CONFIG);
-    if (bossHealthEl) bossHealthEl.hidden = false;
-    updateBossHealthBar();
+    const mult = difficultyMultiplier(state.stage);
+    createEnemy(entry.type, entry.x * (VIEW_W - config.width), -config.height, mult, mult, getTimeScale);
   }
 
   function processSpawns() {
-    while (spawnPointer < SPAWN_TIMELINE.length && SPAWN_TIMELINE[spawnPointer].tMs <= state.elapsedMs) {
-      spawnFromEntry(SPAWN_TIMELINE[spawnPointer]);
+    while (spawnPointer < stageTimeline.length && stageTimeline[spawnPointer].tMs <= stageElapsedMs) {
+      spawnFromEntry(stageTimeline[spawnPointer]);
       spawnPointer += 1;
-    }
-    if (!bossSpawned && !boss && state.elapsedMs >= STAGE_DURATION_MS) {
-      bossSpawned = true;
-      spawnBoss();
     }
   }
 
-  // Enemies/boss set a one-frame `wantsFire` flag on themselves (see
+  // Endless progression: once this stage's duration has elapsed and every
+  // entry in its timeline has been spawned (not necessarily defeated —
+  // stragglers just carry over into the next stage's screen), generate and
+  // switch to the next one. No terminal "win" — see state.js's STATES.
+  function maybeAdvanceStage() {
+    if (stageElapsedMs >= stageDurationMs && spawnPointer >= stageTimeline.length) {
+      startStage(state.stage + 1, { announce: true });
+    }
+  }
+
+  // Enemies set a one-frame `wantsFire` flag on themselves (see
   // entities.js) when it's time to shoot — read and cleared here, since
   // only main.js has the live player position createBullet() needs.
   function processEnemyFire() {
@@ -301,49 +413,34 @@ function init() {
       const config = ENEMY_CONFIGS[enemy.enemyType];
       const cx = enemy.pos.x + config.width / 2;
       const cy = enemy.pos.y + config.height;
+      const bulletOpts = { sprite: config.bulletSprite, height: config.bulletHeight ?? 24 };
       if (fireType === "aimed") {
         if (!player) return;
         const dx = player.pos.x + PLAYER_WIDTH / 2 - cx;
         const dy = player.pos.y + PLAYER_HEIGHT / 2 - cy;
         const dist = Math.max(1, Math.hypot(dx, dy));
-        createBullet("enemy", cx - 3, cy, (dx / dist) * config.bulletSpeed, (dy / dist) * config.bulletSpeed);
+        createBullet("enemy", cx, cy, (dx / dist) * config.bulletSpeed, (dy / dist) * config.bulletSpeed, bulletOpts);
       } else if (fireType === "spread") {
-        [-100, 0, 100].forEach((velX) => {
-          createBullet("enemy", cx - 3, cy, velX, config.bulletSpeed);
+        (config.spreadVelX ?? [-100, 0, 100]).forEach((velX) => {
+          createBullet("enemy", cx, cy, velX, config.bulletSpeed, bulletOpts);
         });
       }
     });
   }
 
-  function processBossFire() {
-    if (!boss || !boss.wantsFire || boss.defeated) return;
-    const { pattern, bulletSpeed } = boss.wantsFire;
-    boss.wantsFire = null;
-    const cx = boss.pos.x + BOSS_WIDTH / 2;
-    const cy = boss.pos.y + BOSS_HEIGHT - 16;
-    if (pattern === "aimed" && player) {
-      [-24, 24].forEach((offsetX) => {
-        const dx = player.pos.x + PLAYER_WIDTH / 2 - (cx + offsetX);
-        const dy = player.pos.y + PLAYER_HEIGHT / 2 - cy;
-        const dist = Math.max(1, Math.hypot(dx, dy));
-        createBullet("enemy", cx + offsetX - 3, cy, (dx / dist) * bulletSpeed, (dy / dist) * bulletSpeed);
-      });
-    } else {
-      [-140, -70, 0, 70, 140].forEach((velX) => {
-        createBullet("enemy", cx - 3, cy, velX, bulletSpeed);
-      });
-    }
-  }
-
   // Manual viewport-bounds cleanup rather than Kaplay's offscreen()
   // component — see entities.js's comment on createBullet() for why.
+  // Enemy bullets (not player's) get their velocity scaled by
+  // getTimeScale() here, the same Time Dilation hook createEnemy() uses —
+  // slowing incoming fire without touching the player's own shots.
   function cleanupOffscreen() {
     get("enemy").forEach((enemy) => {
       if (enemy.pos.y > VIEW_H + 60) destroy(enemy);
     });
     get("bullet").forEach((bullet) => {
-      bullet.pos.x += bullet.velX * dt();
-      bullet.pos.y += bullet.velY * dt();
+      const scale = bullet.is("bullet-enemy") ? getTimeScale() : 1;
+      bullet.pos.x += bullet.velX * scale * dt();
+      bullet.pos.y += bullet.velY * scale * dt();
       if (bullet.pos.x < -40 || bullet.pos.x > VIEW_W + 40 || bullet.pos.y < -40 || bullet.pos.y > VIEW_H + 40) {
         destroy(bullet);
       }
@@ -364,16 +461,30 @@ function init() {
       dx *= Math.SQRT1_2;
       dy *= Math.SQRT1_2;
     }
-    player.pos.x = Math.min(PLAYER_MAX_X, Math.max(PLAYER_MIN_X, player.pos.x + dx * PLAYER_SPEED * deltaTime));
-    player.pos.y = Math.min(PLAYER_MAX_Y, Math.max(PLAYER_MIN_Y, player.pos.y + dy * PLAYER_SPEED * deltaTime));
+    const speed = PLAYER_SPEED * (state.isSpeedBoosted ? PLAYER_SPEED_BOOST_MULT : 1);
+    player.pos.x = Math.min(PLAYER_MAX_X, Math.max(PLAYER_MIN_X, player.pos.x + dx * speed * deltaTime));
+    player.pos.y = Math.min(PLAYER_MAX_Y, Math.max(PLAYER_MIN_Y, player.pos.y + dy * speed * deltaTime));
   }
 
+  // Giga-Laser (see applyPowerUp()) swaps the player's shot for a single
+  // fast piercing beam using the sliced energy-lance bullet art instead of
+  // the normal weapon-level spread — createBullet()'s opts.piercing keeps it
+  // from being destroyed on its first hit (see the "bullet-player"/"enemy"
+  // collision handler below).
   function firePlayerBullet() {
     const muzzleX = player.pos.x + PLAYER_WIDTH / 2;
     const muzzleY = player.pos.y;
-    WEAPON_SPREADS[state.weaponLevel - 1].forEach((velX) => {
-      createBullet("player", muzzleX - 3, muzzleY, velX, -PLAYER_BULLET_SPEED);
-    });
+    if (state.isGigaLaser) {
+      createBullet("player", muzzleX, muzzleY, 0, -PLAYER_BULLET_SPEED * 1.3, {
+        sprite: "player-bullet-giga",
+        height: 42,
+        piercing: true,
+      });
+    } else {
+      WEAPON_SPREADS[state.weaponLevel - 1].forEach((velX) => {
+        createBullet("player", muzzleX, muzzleY, velX, -PLAYER_BULLET_SPEED);
+      });
+    }
     audio.playShoot();
   }
 
@@ -385,46 +496,8 @@ function init() {
     const cy = enemy.pos.y + config.height / 2;
     state.addScore(config.score);
     audio.playEnemyExplosion();
-    spawnKillEffect(`enemy-${enemy.enemyType}`, cx, cy, config, config.width > 48 ? 1.2 : 0.85);
+    spawnKillEffect(config.shipId, cx, cy, config, config.width > 50 ? 1.25 : 0.9);
     destroy(enemy);
-  }
-
-  // Staggered multi-burst finale (a few small offset bursts, then one large
-  // final blast) rather than a single bigger explosion — wait() is the same
-  // sequencing primitive the platformer already uses for its own win
-  // flourish (see javascripts/game/main.js). state/score/high-score
-  // bookkeeping in winRound() below still runs immediately here (so
-  // debug-hook-driven tests observe WIN state and persisted scores right
-  // away, see dev/tests/skyfire-*.mjs) — only the win overlay's DOM reveal
-  // is deferred by the finale's duration via winRound()'s revealDelaySec,
-  // so the overlay doesn't cover the burst sequence while it's still playing.
-  const BOSS_FINALE_BURST_OFFSETS = [
-    [-30, -20],
-    [25, 15],
-    [-15, 30],
-    [10, -25],
-  ];
-  const BOSS_FINALE_BURST_INTERVAL_SEC = 0.18;
-  const BOSS_FINALE_OVERLAY_GRACE_SEC = 0.5;
-
-  function defeatBoss() {
-    if (!boss || boss.defeated) return;
-    boss.defeated = true;
-    const bx = boss.pos.x + BOSS_WIDTH / 2;
-    const by = boss.pos.y + BOSS_HEIGHT / 2;
-    audio.playBossExplosion();
-    destroy(boss);
-    boss = null;
-    if (bossHealthEl) bossHealthEl.hidden = true;
-
-    BOSS_FINALE_BURST_OFFSETS.forEach((offset, i) => {
-      wait(i * BOSS_FINALE_BURST_INTERVAL_SEC, () => spawnFireSmokeBurst(bx + offset[0], by + offset[1], rand(0.8, 1.4)));
-    });
-    const finaleDurationSec = BOSS_FINALE_BURST_OFFSETS.length * BOSS_FINALE_BURST_INTERVAL_SEC;
-    wait(finaleDurationSec, () => spawnKillEffect("boss", bx, by, { width: BOSS_WIDTH, height: BOSS_HEIGHT }, 3.2));
-
-    state.addScore(BOSS_CONFIG.scoreValue);
-    winRound(finaleDurationSec + BOSS_FINALE_OVERLAY_GRACE_SEC);
   }
 
   function triggerBomb() {
@@ -441,16 +514,22 @@ function init() {
         enemy.hitFlashMs = ENEMY_HIT_FLASH_MS;
       }
     });
-    if (boss && !boss.defeated) {
-      boss.health -= BOMB_BOSS_DAMAGE;
-      boss.hitFlashMs = ENEMY_HIT_FLASH_MS;
-      updateBossHealthBar();
-      if (boss.health <= 0) defeatBoss();
-    }
   }
 
+  // Shield Booster absorbs exactly one hit (no life lost) before the normal
+  // hit-invincibility/life-loss path runs; power-up Invincibility is a
+  // separate, sustained "untouchable" window (state.isPowerInvincible) that
+  // bypasses this function entirely, kept distinct from the brief post-hit
+  // grace blink (state.isHitInvincible) so the two never visually collide.
   function handlePlayerHit() {
-    if (!state.isPlaying || state.isHitInvincible) return;
+    if (!state.isPlaying || state.isHitInvincible || state.isPowerInvincible) return;
+    if (state.shieldCharges > 0) {
+      state.shieldCharges = 0;
+      audio.playPlayerHit();
+      spawnFireBurst(player.pos.x + PLAYER_WIDTH / 2, player.pos.y + PLAYER_HEIGHT / 2, 0.5);
+      state.triggerHitInvincibility(HIT_INVINCIBLE_MS);
+      return;
+    }
     audio.playPlayerHit();
     spawnFireBurst(player.pos.x + PLAYER_WIDTH / 2, player.pos.y + PLAYER_HEIGHT / 2, 0.7);
     const lost = state.loseLife();
@@ -458,6 +537,45 @@ function init() {
       finishGameOver();
     } else {
       state.triggerHitInvincibility(HIT_INVINCIBLE_MS);
+    }
+  }
+
+  // Real effects for 10 of the 35 sliced power-up icons this pass — see
+  // entities.js's POWERUP_TYPES and stage.js's POWERUP_UNLOCK_SCHEDULE.
+  function applyPowerUp(type) {
+    switch (type) {
+      case "spread_shot":
+        state.raiseWeaponLevel();
+        break;
+      case "rapid_fire":
+        state.triggerRapidFire(POWERUP_DURATIONS_MS.rapid_fire);
+        break;
+      case "shield_booster":
+        state.addShield();
+        break;
+      case "armor_plating":
+        state.addLife();
+        break;
+      case "invincibility":
+        state.triggerInvincibility(POWERUP_DURATIONS_MS.invincibility);
+        break;
+      case "speed_booster":
+        state.triggerSpeedBoost(POWERUP_DURATIONS_MS.speed_booster);
+        break;
+      case "score_multiplier":
+        state.triggerScoreMultiplier(POWERUP_DURATIONS_MS.score_multiplier);
+        break;
+      case "smart_bomb_reload":
+        state.addBomb();
+        break;
+      case "time_dilation":
+        state.triggerSlowMo(POWERUP_DURATIONS_MS.time_dilation);
+        break;
+      case "giga_laser":
+        state.triggerGigaLaser(POWERUP_DURATIONS_MS.giga_laser);
+        break;
+      default:
+        break;
     }
   }
 
@@ -470,7 +588,7 @@ function init() {
       return;
     }
     highscoresEl.hidden = false;
-    highscoresEl.innerHTML = list.map((entry) => `<li>${Number(entry.score) || 0}</li>`).join("");
+    highscoresEl.innerHTML = list.map((entry) => `<li>${Number(entry.score) || 0} <span class="skyfire-highscore-stage">(stage ${entry.stage ?? 1})</span></li>`).join("");
   }
 
   function showOverlay(message, buttonLabel, statsText) {
@@ -491,28 +609,11 @@ function init() {
     overlayEl.hidden = true;
   }
 
-  // revealDelaySec defers only the overlay's DOM reveal (see defeatBoss()'s
-  // finale sequencing above) — every state/score/persistence side effect
-  // below still happens synchronously regardless of the delay.
-  function winRound(revealDelaySec = 0) {
-    state.win();
-    state.addScore(STAGE_CLEAR_BONUS + (state.tookDamage ? 0 : NO_DEATH_BONUS));
-    audio.playWin();
-    const { rank } = submitHighScore(state.score);
-    if (bestEl) bestEl.textContent = getTopScore();
-    const revealOverlay = () => showOverlay(rank ? `Stage Clear! New high score (#${rank})` : "Stage Clear!", "Play Again", `Score: ${state.score}`);
-    if (revealDelaySec > 0) {
-      wait(revealDelaySec, revealOverlay);
-    } else {
-      revealOverlay();
-    }
-  }
-
   function finishGameOver() {
     audio.playGameOver();
-    const { rank } = submitHighScore(state.score);
+    const { rank } = submitHighScore(state.score, state.stage);
     if (bestEl) bestEl.textContent = getTopScore();
-    showOverlay(rank ? `Game Over — new high score (#${rank})` : "Game Over", "Try Again", `Score: ${state.score}`);
+    showOverlay(rank ? `Game Over — new high score (#${rank})` : "Game Over", "Try Again", `Score: ${state.score} — reached stage ${state.stage}`);
   }
 
   function resetRound() {
@@ -520,13 +621,9 @@ function init() {
     get("bullet").forEach((bullet) => destroy(bullet));
     get("powerup").forEach((powerup) => destroy(powerup));
     get("fx").forEach((fx) => destroy(fx));
-    if (boss) {
-      destroy(boss);
-      boss = null;
-    }
-    if (bossHealthEl) bossHealthEl.hidden = true;
-    spawnPointer = 0;
-    bossSpawned = false;
+    rngSeed = (Date.now() ^ 0x9e3779b9) >>> 0;
+    rng = mulberry32(rngSeed);
+    startStage(1);
     shootCooldownMs = 0;
     if (player) {
       player.pos.x = playerSpawn.x - PLAYER_WIDTH / 2;
@@ -544,6 +641,13 @@ function init() {
       state.bombs = MAX_BOMBS;
       state.weaponLevel = 1;
       state.hitTimer = 0;
+      state.shieldCharges = 0;
+      state.powerInvincibleMs = 0;
+      state.speedBoostMs = 0;
+      state.scoreMultiplierMs = 0;
+      state.rapidFireMs = 0;
+      state.slowMoMs = 0;
+      state.gigaLaserMs = 0;
       state.state = STATES.READY;
       resetRound();
     }
@@ -602,25 +706,13 @@ function init() {
   onButtonPress("bomb", triggerBomb);
 
   onCollide("bullet-player", "enemy", (bullet, enemy) => {
-    destroy(bullet);
+    if (!bullet.piercing) destroy(bullet);
     if (!state.isPlaying || enemy.defeated) return;
     enemy.health -= 1;
     if (enemy.health <= 0) {
       defeatEnemy(enemy);
     } else {
       enemy.hitFlashMs = ENEMY_HIT_FLASH_MS;
-    }
-  });
-
-  onCollide("bullet-player", "boss", (bullet) => {
-    destroy(bullet);
-    if (!state.isPlaying || !boss || boss.defeated) return;
-    boss.health -= 1;
-    updateBossHealthBar();
-    if (boss.health <= 0) {
-      defeatBoss();
-    } else {
-      boss.hitFlashMs = ENEMY_HIT_FLASH_MS;
     }
   });
 
@@ -634,16 +726,11 @@ function init() {
     handlePlayerHit();
   });
 
-  onCollide("player", "boss", () => {
-    if (!boss || boss.defeated) return;
-    handlePlayerHit();
-  });
-
   onCollide("player", "powerup", (playerObj, powerup) => {
     if (!state.isPlaying) return;
     spawnPowerUpSparkle(powerup.pos.x, powerup.pos.y);
+    applyPowerUp(powerup.powerupType);
     destroy(powerup);
-    state.raiseWeaponLevel();
     state.addScore(30);
     audio.playPowerUp();
   });
@@ -653,6 +740,7 @@ function init() {
     livesEl.textContent = state.lives;
     bombsEl.textContent = state.bombs;
     weaponEl.textContent = WEAPON_LABELS[state.weaponLevel - 1];
+    if (stageEl) stageEl.textContent = state.stage;
 
     bgLayers.forEach((layer) => scrollLayerPair(layer.a, layer.b, layer.speed, dt()));
 
@@ -671,26 +759,28 @@ function init() {
     if (!state.isPlaying || !player) return;
 
     state.tick(dt() * 1000);
+    stageElapsedMs += dt() * 1000;
     if (shootCooldownMs > 0) shootCooldownMs -= dt() * 1000;
 
-    player.opacity = state.isHitInvincible ? (Math.floor(state.hitTimer / 90) % 2 === 0 ? 1 : 0.35) : 1;
+    player.opacity = state.isHitInvincible || state.isPowerInvincible ? (Math.floor((state.hitTimer || 400) / 90) % 2 === 0 ? 1 : 0.35) : 1;
+    updatePlayerPose(player, dt(), Math.max(0.34, state.lives / MAX_LIVES));
 
     updatePlayerMovement(dt());
+    const cooldown = state.isRapidFire ? RAPID_FIRE_COOLDOWN_MS : SHOOT_COOLDOWN_MS;
     if (isButtonDown("fire") && shootCooldownMs <= 0) {
-      shootCooldownMs = SHOOT_COOLDOWN_MS;
+      shootCooldownMs = cooldown;
       firePlayerBullet();
     }
 
     processSpawns();
     processEnemyFire();
-    processBossFire();
     cleanupOffscreen();
-    if (boss) updateBossHealthBar();
+    maybeAdvanceStage();
   });
 
   buildScene();
   if (bestEl) bestEl.textContent = getTopScore();
-  if (messageEl) messageEl.textContent = "Dodge the bullet storm, power up, and take down the boss.";
+  if (messageEl) messageEl.textContent = "Dodge the bullet storm, power up, and survive as many stages as you can.";
 
   // ============================================================================
   // Dev-only debug hook for testing (completely inert without __NAP_TEST_HOOK__)
@@ -705,13 +795,21 @@ function init() {
         lives: state.lives,
         bombs: state.bombs,
         weaponLevel: state.weaponLevel,
+        stage: state.stage,
         state: state.state,
         isHitInvincible: state.isHitInvincible,
+        isPowerInvincible: state.isPowerInvincible,
+        isSpeedBoosted: state.isSpeedBoosted,
+        isRapidFire: state.isRapidFire,
+        isSlowMo: state.isSlowMo,
+        isGigaLaser: state.isGigaLaser,
+        isScoreMultiplied: state.isScoreMultiplied,
+        shieldCharges: state.shieldCharges,
         isPlaying: state.isPlaying,
         isOver: state.isOver,
         elapsedMs: state.elapsedMs,
-        bossActive: !!boss,
-        bossHealth: boss ? boss.health : null,
+        stageElapsedMs,
+        stageDurationMs,
       }),
       setState: (patch) => {
         Object.assign(state, patch);
@@ -734,22 +832,33 @@ function init() {
           if (!enemy.defeated) defeatEnemy(enemy);
         });
       },
-      skipToBoss: () => {
-        state.elapsedMs = STAGE_DURATION_MS;
-      },
       forceHit: () => {
         state.hitTimer = 0;
+        state.powerInvincibleMs = 0;
+        state.shieldCharges = 0;
         handlePlayerHit();
       },
       triggerBomb,
       raiseWeaponLevel: () => state.raiseWeaponLevel(),
+      applyPowerUp,
+      // Seeds the stage-generation RNG (used *before* startGame()/resetRound()
+      // reseeds it — call this, then start the game, for a reproducible
+      // stage layout) — see stage.js's mulberry32()/generateStageTimeline().
+      setSeed: (seed) => {
+        rngSeed = seed >>> 0;
+        rng = mulberry32(rngSeed);
+      },
+      // Jumps straight to stage n's freshly-generated timeline without
+      // playing through the intervening stages — the endless-mode
+      // replacement for the old single-boss skipToBoss() hook.
+      advanceToStage: (n) => {
+        startStage(n);
+      },
       // Generic tag counter — used by tests to verify e.g. how many
       // "bullet-player" objects a single shot at a given weapon level
       // produces, without needing a dedicated getter per tag.
       countTag: (tag) => get(tag).length,
       getPlayerPos: () => (player ? { x: player.pos.x, y: player.pos.y } : null),
-      winRound,
-      defeatBoss,
       resetRound,
       startGame,
     };

@@ -1,28 +1,26 @@
-Sprites in this directory are selected and renamed from Kenney's **Space Shooter
-Redux** pack (kenney.nl), licensed **CC0 1.0 Universal** (public domain — attribution
-not required, credited here as good practice). Source: https://kenney.nl/assets/space-shooter-redux
-(also mirrored at https://opengameart.org/content/space-shooter-redux).
+Ship, bullet, and power-up art (`ships/`, `bullets/`, `powerups/`) is original artwork
+produced for this site, delivered as labeled 7x5 reference sheets (one player ship,
+8 enemy ships, 4 bullet-type sheets, and a power-up icon sheet) and sliced into
+individual named sprite PNGs by `dev/generate-skyfire-sheet-assets.py` — see that
+script for the exact per-sheet cell layout and naming convention. Effect frames
+(thruster/damaged/firing/explosion) and all bullet art are rotated 90° during
+slicing to face "up," matching this vertical shmup's scroll direction; enemy-fired
+bullets get a runtime 180° flip instead of a second stored asset (see
+`entities.js`'s `createBullet()`).
+
+---
+
+Sprites below are selected and renamed from Kenney's **Space Shooter Redux** pack
+(kenney.nl), licensed **CC0 1.0 Universal** (public domain — attribution not
+required, credited here as good practice). Source:
+https://kenney.nl/assets/space-shooter-redux (also mirrored at
+https://opengameart.org/content/space-shooter-redux).
 
 | File in this directory | Source file(s) |
 | --- | --- |
-| `player-ship.png` | `PNG/playerShip1_blue.png` |
-| `enemy-drone.png` | `PNG/Enemies/enemyBlack1.png` |
-| `enemy-fighter.png` | `PNG/Enemies/enemyBlue3.png` |
-| `enemy-gunship.png` | `PNG/Enemies/enemyRed5.png` |
-| `boss.png` | `PNG/ufoRed.png` (rendered scaled up in-game) |
-| `bullet-player.png` | `PNG/Lasers/laserBlue01.png` |
-| `bullet-enemy.png` | `PNG/Lasers/laserRed01.png` |
-| `powerup-weapon.png` | `PNG/Power-ups/powerupBlue_bolt.png` |
 | `bg-starfield.png` | `Backgrounds/black.png` |
 | `bg-asteroid-1.png` | `PNG/Meteors/meteorBrown_big1.png` |
 | `bg-asteroid-2.png` | `PNG/Meteors/meteorGrey_med1.png` |
-
-`enemy-drone-fragment-0..3.png`, `enemy-fighter-fragment-0..3.png`,
-`enemy-gunship-fragment-0..3.png`, and `boss-fragment-0..3.png` are mechanical 2x2
-crops of the corresponding sprite above (see `dev/generate-skyfire-fragments.sh`),
-used by the death "shatter" effect — same convention as the platformer's
-`enemy-<type>-fragment-*.png` (see `dev/generate-enemy-fragments.sh`). Not new art,
-same license as the source sprite.
 
 ---
 

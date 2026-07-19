@@ -1,13 +1,14 @@
 <section id="skyfire">
   <div class="hero-intro">
     <h1>Skyfire Squadron</h1>
-    <p class="hero-tagline">Dodge the bullet storm, power up, and take down the boss.</p>
+    <p class="hero-tagline">Dodge the bullet storm, power up, and survive as many stages as you can.</p>
   </div>
 
   <div class="game-wrap">
     <div class="game-hud">
       <span class="hud-item">Score <strong id="skyfire-score">0</strong></span>
       <span class="hud-item">Best <strong id="skyfire-best">0</strong></span>
+      <span class="hud-item">Stage <strong id="skyfire-stage">1</strong></span>
       <span class="hud-item">Lives <strong id="skyfire-lives">3</strong></span>
       <span class="hud-item">Bombs <strong id="skyfire-bombs">3</strong></span>
       <span class="hud-item">Weapon <strong id="skyfire-weapon">I</strong></span>
@@ -17,9 +18,6 @@
 
     <div class="game-canvas-frame game-canvas-frame--portrait">
       <canvas id="skyfire-canvas" role="img" aria-label="Skyfire Squadron game board"></canvas>
-      <div class="boss-health-bar" id="skyfire-boss-health" hidden>
-        <div class="boss-health-bar__fill" id="skyfire-boss-health-fill"></div>
-      </div>
       <div class="game-pause-overlay" id="skyfire-pause-overlay" hidden>
         <p class="game-pause-overlay__msg">Paused</p>
         <button type="button" class="btn btn-outline" id="skyfire-resume">Resume</button>

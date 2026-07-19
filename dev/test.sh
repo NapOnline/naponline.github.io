@@ -74,6 +74,7 @@ test_files=(
   "dev/tests/ui.mjs"
   "dev/tests/persistence.mjs"
   "dev/tests/playthrough.mjs"
+  "dev/tests/skyfire-stage.mjs"
   "dev/tests/skyfire-smoke.mjs"
   "dev/tests/skyfire-mechanics.mjs"
   "dev/tests/skyfire-ui.mjs"

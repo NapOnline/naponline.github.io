@@ -17,9 +17,12 @@ export function loadHighScores() {
   }
 }
 
-export function submitHighScore(score) {
+// stage is optional (defaults to 1) so existing v1 entries without it still
+// load/sort/render fine — "stage reached" is the natural endless-mode
+// bragging metric alongside score, see main.js's renderHighScores().
+export function submitHighScore(score, stage = 1) {
   const list = loadHighScores();
-  const entry = { score, date: new Date().toISOString() };
+  const entry = { score, stage, date: new Date().toISOString() };
   list.push(entry);
   list.sort((a, b) => b.score - a.score);
   list.length = Math.min(list.length, MAX_ENTRIES);

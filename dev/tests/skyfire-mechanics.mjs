@@ -2,7 +2,8 @@
 /**
  * Mechanics test suite for Skyfire Squadron — movement bounds, weapon-level
  * bullet spread, per-enemy-type kill scoring, hit/lives/invincibility,
- * bombs, boss phases/defeat, and restarting at least twice (this repo's own
+ * bombs, endless stage progression (enemy unlock schedule, never reaching a
+ * WIN-like terminal state), and restarting at least twice (this repo's own
  * documented lesson: a reset bug can show up only on the *second* restart,
  * see .claude/rules/game.md).
  */
@@ -12,16 +13,17 @@ import {
   navigateToGame,
   clearStorage,
   startGame,
+  waitForGameLoopReady,
   getGameState,
   getEnemies,
   getPlayerPos,
   teleportPlayer,
   killAllEnemies,
-  skipToBoss,
+  advanceToStage,
   forceHit,
   triggerBomb,
   raiseWeaponLevel,
-  callDefeatBoss,
+  applyPowerUp,
   countTag,
   reportTest,
 } from './skyfire-helpers.mjs';
@@ -41,6 +43,7 @@ async function withGame(fn) {
     await navigateToGame(page, true);
     await clearStorage(page);
     await startGame(page);
+    await waitForGameLoopReady(page);
     await fn(page);
   } catch (err) {
     record(fn.name || 'test', false, err.message);
@@ -123,12 +126,22 @@ async function testWeaponLevelSpread() {
   });
 }
 
+// Stage 1's unlocked pool (stage.js's ENEMY_UNLOCK_SCHEDULE) — spawn timing
+// itself is now procedurally generated (see generateStageTimeline()), so
+// this waits generously rather than asserting a specific enemy at a specific
+// millisecond the way the old fixed-timeline test did.
+const STAGE_1_ENEMY_TYPES = ['scout', 'interceptor'];
+const ALL_ENEMY_TYPES = ['scout', 'interceptor', 'swarmer', 'bulwark', 'lancer', 'gunship', 'phantom', 'dreadnought'];
+
 async function testEnemyKillScoring() {
   await withGame(async (page) => {
-    // First drone wave spawns at tMs=1000 (stage.js).
-    await page.waitForTimeout(1300);
+    await page.waitForTimeout(3200);
     const enemiesBefore = await getEnemies(page);
-    record('drone wave spawned', enemiesBefore.some((e) => e.enemyType === 'drone'), `count=${enemiesBefore.length}`);
+    record(
+      'stage 1 spawns enemies from its unlocked pool',
+      enemiesBefore.length > 0 && enemiesBefore.every((e) => STAGE_1_ENEMY_TYPES.includes(e.enemyType)),
+      `count=${enemiesBefore.length} types=${JSON.stringify(enemiesBefore.map((e) => e.enemyType))}`,
+    );
 
     const before = await getGameState(page);
     await killAllEnemies(page);
@@ -174,6 +187,51 @@ async function testBomb() {
   });
 }
 
+// Real-effect power-ups wired this pass (see entities.js's POWERUP_TYPES and
+// main.js's applyPowerUp()) — the other 25 of the 35 sliced icons have no
+// mechanical effect yet, by design (see the plan's "focused subset" scope).
+async function testPowerUpEffects() {
+  await withGame(async (page) => {
+    const before = await getGameState(page);
+    await applyPowerUp(page, 'spread_shot');
+    const afterSpread = await getGameState(page);
+    record('spread_shot raises weapon level', afterSpread.weaponLevel === before.weaponLevel + 1, `${before.weaponLevel} -> ${afterSpread.weaponLevel}`);
+
+    await applyPowerUp(page, 'shield_booster');
+    const afterShield = await getGameState(page);
+    record('shield_booster grants a shield charge', afterShield.shieldCharges === 1, JSON.stringify(afterShield));
+
+    await applyPowerUp(page, 'armor_plating');
+    const afterArmor = await getGameState(page);
+    record('armor_plating grants an extra life', afterArmor.lives === afterShield.lives + 1, `${afterShield.lives} -> ${afterArmor.lives}`);
+
+    await applyPowerUp(page, 'invincibility');
+    const afterInvincibility = await getGameState(page);
+    record('invincibility grants power-invincibility', afterInvincibility.isPowerInvincible === true, JSON.stringify(afterInvincibility));
+
+    await applyPowerUp(page, 'speed_booster');
+    record('speed_booster activates the speed buff', (await getGameState(page)).isSpeedBoosted === true, '');
+
+    await applyPowerUp(page, 'score_multiplier');
+    record('score_multiplier activates the score buff', (await getGameState(page)).isScoreMultiplied === true, '');
+
+    await applyPowerUp(page, 'rapid_fire');
+    record('rapid_fire activates the fire-rate buff', (await getGameState(page)).isRapidFire === true, '');
+
+    await applyPowerUp(page, 'time_dilation');
+    record('time_dilation activates slow-mo', (await getGameState(page)).isSlowMo === true, '');
+
+    await applyPowerUp(page, 'giga_laser');
+    record('giga_laser activates the piercing beam buff', (await getGameState(page)).isGigaLaser === true, '');
+
+    const beforeBomb = await getGameState(page);
+    await triggerBomb(page); // spend one first so smart_bomb_reload has room to add it back
+    await applyPowerUp(page, 'smart_bomb_reload');
+    const afterBombReload = await getGameState(page);
+    record('smart_bomb_reload restores a bomb charge', afterBombReload.bombs === beforeBomb.bombs, `${beforeBomb.bombs} -> spent -> ${afterBombReload.bombs}`);
+  });
+}
+
 async function testGameOverOnZeroLives() {
   await withGame(async (page) => {
     await forceHit(page);
@@ -202,16 +260,40 @@ async function testRestartAtLeastTwice() {
   });
 }
 
-async function testBossPhasesAndDefeat() {
+// Endless replacement for the old single-boss test: no boss, no WIN state
+// (see state.js) — a run just keeps advancing through procedurally-generated
+// stages, each unlocking more enemy archetypes (stage.js's
+// ENEMY_UNLOCK_SCHEDULE), forever. Exact spawn determinism for a given seed
+// is covered by dev/tests/skyfire-stage.mjs's pure-Node unit tests (no
+// browser-timing jitter to fight there); this is the browser-integration
+// check that advanceToStage() actually drives the live game the same way.
+async function testStageProgression() {
   await withGame(async (page) => {
-    await skipToBoss(page);
-    await page.waitForTimeout(400);
-    const spawned = await getGameState(page);
-    record('boss spawns once the stage timeline elapses', spawned?.bossActive === true && spawned?.bossHealth === 60, JSON.stringify(spawned));
+    const initial = await getGameState(page);
+    record('starts at stage 1', initial?.stage === 1, JSON.stringify(initial));
 
-    await callDefeatBoss(page);
-    const won = await getGameState(page);
-    record('defeating the boss wins the round and clears bossActive', won?.state === 'WIN' && won?.bossActive === false, JSON.stringify(won));
+    await advanceToStage(page, 5);
+    await page.waitForTimeout(3500);
+    const atStage5 = await getGameState(page);
+    const enemies5 = await getEnemies(page);
+    const allowedAt5 = ['scout', 'interceptor', 'swarmer', 'bulwark'];
+    record('advanceToStage jumps state.stage forward', atStage5?.stage === 5, JSON.stringify(atStage5));
+    record(
+      'stage 5 only spawns archetypes unlocked by stage 5',
+      enemies5.length > 0 && enemies5.every((e) => allowedAt5.includes(e.enemyType)),
+      JSON.stringify(enemies5.map((e) => e.enemyType)),
+    );
+    record('the game never reaches a WIN-like terminal state', atStage5?.state !== 'WIN', atStage5?.state);
+
+    await killAllEnemies(page);
+    await advanceToStage(page, 13);
+    await page.waitForTimeout(4000);
+    const enemies13 = await getEnemies(page);
+    record(
+      'stage 13 (all 8 archetypes unlocked) never spawns an unrecognized type',
+      enemies13.length > 0 && enemies13.every((e) => ALL_ENEMY_TYPES.includes(e.enemyType)),
+      JSON.stringify(enemies13.map((e) => e.enemyType)),
+    );
   });
 }
 
@@ -224,9 +306,10 @@ async function runAllTests() {
   await testEnemyKillScoring();
   await testHitLivesAndInvincibility();
   await testBomb();
+  await testPowerUpEffects();
   await testGameOverOnZeroLives();
   await testRestartAtLeastTwice();
-  await testBossPhasesAndDefeat();
+  await testStageProgression();
 
   console.log(`\n📊 Results: ${passCount} passed, ${failCount} failed\n`);
   process.exit(failCount > 0 ? 1 : 0);
