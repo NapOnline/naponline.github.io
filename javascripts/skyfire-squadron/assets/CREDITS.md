@@ -3,11 +3,6 @@ Redux** pack (kenney.nl), licensed **CC0 1.0 Universal** (public domain — attr
 not required, credited here as good practice). Source: https://kenney.nl/assets/space-shooter-redux
 (also mirrored at https://opengameart.org/content/space-shooter-redux).
 
-`explosion-sheet.png` is a derived asset: the pack's 20 individual `fire00.png`
-through `fire19.png` frames (non-uniform sizes) composited into a single horizontal,
-uniform-cell sprite sheet (20 frames, 16x41 per cell, bottom-aligned) for use with
-Kaplay's `sliceX`/`sliceY` sprite-sheet loading. Same license as the source frames.
-
 | File in this directory | Source file(s) |
 | --- | --- |
 | `player-ship.png` | `PNG/playerShip1_blue.png` |
@@ -19,9 +14,15 @@ Kaplay's `sliceX`/`sliceY` sprite-sheet loading. Same license as the source fram
 | `bullet-enemy.png` | `PNG/Lasers/laserRed01.png` |
 | `powerup-weapon.png` | `PNG/Power-ups/powerupBlue_bolt.png` |
 | `bg-starfield.png` | `Backgrounds/black.png` |
-| `explosion-sheet.png` | `PNG/Effects/fire00.png`–`fire19.png` (composited) |
 | `bg-asteroid-1.png` | `PNG/Meteors/meteorBrown_big1.png` |
 | `bg-asteroid-2.png` | `PNG/Meteors/meteorGrey_med1.png` |
+
+`enemy-drone-fragment-0..3.png`, `enemy-fighter-fragment-0..3.png`,
+`enemy-gunship-fragment-0..3.png`, and `boss-fragment-0..3.png` are mechanical 2x2
+crops of the corresponding sprite above (see `dev/generate-skyfire-fragments.sh`),
+used by the death "shatter" effect — same convention as the platformer's
+`enemy-<type>-fragment-*.png` (see `dev/generate-enemy-fragments.sh`). Not new art,
+same license as the source sprite.
 
 ---
 

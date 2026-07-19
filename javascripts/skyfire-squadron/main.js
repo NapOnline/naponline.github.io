@@ -11,8 +11,10 @@ import {
   createBoss,
   createBullet,
   createPowerUp,
-  createExplosion,
-  createDeathEffect,
+  spawnPowerUpSparkle,
+  spawnFireBurst,
+  spawnFireSmokeBurst,
+  spawnKillEffect,
 } from "./entities.js";
 import { STAGE_DURATION_MS, SPAWN_TIMELINE, BOSS_CONFIG } from "./stage.js";
 import { GameState, STATES, MAX_LIVES, MAX_BOMBS } from "./state.js";
@@ -136,8 +138,14 @@ function init() {
   loadSprite("player-ship", `${ASSET_BASE}player-ship.png`);
   Object.values(ENEMY_CONFIGS).forEach((config) => {
     loadSprite(config.sprite, `${ASSET_BASE}${config.sprite}.png`);
+    for (let i = 0; i < 4; i++) {
+      loadSprite(`${config.sprite}-fragment-${i}`, `${ASSET_BASE}${config.sprite}-fragment-${i}.png`);
+    }
   });
   loadSprite("boss", `${ASSET_BASE}boss.png`);
+  for (let i = 0; i < 4; i++) {
+    loadSprite(`boss-fragment-${i}`, `${ASSET_BASE}boss-fragment-${i}.png`);
+  }
   loadSprite("bullet-player", `${ASSET_BASE}bullet-player.png`);
   loadSprite("bullet-enemy", `${ASSET_BASE}bullet-enemy.png`);
   loadSprite("powerup-weapon", `${ASSET_BASE}powerup-weapon.png`);
@@ -147,11 +155,6 @@ function init() {
   BG_ASTEROID_SPRITES.forEach((name) => loadSprite(name, `${ASSET_BASE}${name}.png`));
   BG_PLANET_SPRITES.forEach((name) => loadSprite(name, `${ASSET_BASE}${name}.png`));
   loadSprite("smoke-puff", `${ASSET_BASE}smoke-puff.png`);
-  loadSprite("explosion", `${ASSET_BASE}explosion-sheet.png`, {
-    sliceX: 20,
-    sliceY: 1,
-    anims: { burst: { from: 0, to: 19, loop: false, speed: 24 } },
-  });
 
   setupTouchControls(touchControls);
 
@@ -260,7 +263,10 @@ function init() {
 
   function spawnFromEntry(entry) {
     if (entry.type === "powerup") {
-      createPowerUp(entry.x * VIEW_W - 11, -30);
+      // createPowerUp() is anchor("center")-based (see entities.js), unlike
+      // every other spawn call here — entry.x's normalized position maps
+      // directly to the pickup's center with no half-width offset needed.
+      createPowerUp(entry.x * VIEW_W, -30);
       return;
     }
     const config = ENEMY_CONFIGS[entry.type];
@@ -379,7 +385,7 @@ function init() {
     const cy = enemy.pos.y + config.height / 2;
     state.addScore(config.score);
     audio.playEnemyExplosion();
-    createDeathEffect(cx, cy, config.width > 48 ? 1.2 : 0.85);
+    spawnKillEffect(`enemy-${enemy.enemyType}`, cx, cy, config, config.width > 48 ? 1.2 : 0.85);
     destroy(enemy);
   }
 
@@ -412,10 +418,10 @@ function init() {
     if (bossHealthEl) bossHealthEl.hidden = true;
 
     BOSS_FINALE_BURST_OFFSETS.forEach((offset, i) => {
-      wait(i * BOSS_FINALE_BURST_INTERVAL_SEC, () => createDeathEffect(bx + offset[0], by + offset[1], rand(0.8, 1.4)));
+      wait(i * BOSS_FINALE_BURST_INTERVAL_SEC, () => spawnFireSmokeBurst(bx + offset[0], by + offset[1], rand(0.8, 1.4)));
     });
     const finaleDurationSec = BOSS_FINALE_BURST_OFFSETS.length * BOSS_FINALE_BURST_INTERVAL_SEC;
-    wait(finaleDurationSec, () => createDeathEffect(bx, by, 3.2));
+    wait(finaleDurationSec, () => spawnKillEffect("boss", bx, by, { width: BOSS_WIDTH, height: BOSS_HEIGHT }, 3.2));
 
     state.addScore(BOSS_CONFIG.scoreValue);
     winRound(finaleDurationSec + BOSS_FINALE_OVERLAY_GRACE_SEC);
@@ -446,7 +452,7 @@ function init() {
   function handlePlayerHit() {
     if (!state.isPlaying || state.isHitInvincible) return;
     audio.playPlayerHit();
-    createExplosion(player.pos.x + PLAYER_WIDTH / 2, player.pos.y + PLAYER_HEIGHT / 2, 0.7);
+    spawnFireBurst(player.pos.x + PLAYER_WIDTH / 2, player.pos.y + PLAYER_HEIGHT / 2, 0.7);
     const lost = state.loseLife();
     if (lost) {
       finishGameOver();
@@ -635,6 +641,7 @@ function init() {
 
   onCollide("player", "powerup", (playerObj, powerup) => {
     if (!state.isPlaying) return;
+    spawnPowerUpSparkle(powerup.pos.x, powerup.pos.y);
     destroy(powerup);
     state.raiseWeaponLevel();
     state.addScore(30);

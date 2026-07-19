@@ -272,45 +272,102 @@ export function createBullet(owner, x, y, velX, velY, opts = {}) {
   ]);
 }
 
+// Rendered near-native size (native art is 34x33 — the previous 22x21 render
+// shrank the bolt icon down to a near-illegible flat blue blob) and given a
+// continuous breathe/wobble so it reads as a live pickup rather than a
+// static square. anchor("center") makes x/y the pickup's center (unlike
+// most entities in this file, which are top-left-anchored) so the
+// scale()/rotate() pulse below pivots in place instead of swinging around a
+// corner — see spawnFromEntry() in main.js for the one call site, which
+// passes the intended center directly.
+export const POWERUP_WIDTH = 30;
+export const POWERUP_HEIGHT = 29;
+const POWERUP_BREATHE_RATE = 4;
+const POWERUP_BREATHE_AMOUNT = 0.12;
+const POWERUP_WOBBLE_RATE = 2.5;
+const POWERUP_WOBBLE_DEG = 14;
+
 export function createPowerUp(x, y) {
   const powerup = add([
-    sprite("powerup-weapon", { width: 22, height: 21 }),
+    sprite("powerup-weapon", { width: POWERUP_WIDTH, height: POWERUP_HEIGHT }),
     pos(x, y),
+    anchor("center"),
     area(),
+    rotate(0),
+    scale(1),
     z(7),
     "powerup",
-    { velY: 70 },
+    { velY: 70, ageSec: 0 },
   ]);
   powerup.onUpdate(() => {
-    powerup.pos.y += powerup.velY * dt();
+    const dtSec = dt();
+    powerup.ageSec += dtSec;
+    powerup.pos.y += powerup.velY * dtSec;
+    const breathe = 1 + Math.sin(powerup.ageSec * POWERUP_BREATHE_RATE) * POWERUP_BREATHE_AMOUNT;
+    powerup.scale = vec2(breathe, breathe);
+    powerup.angle = Math.sin(powerup.ageSec * POWERUP_WOBBLE_RATE) * POWERUP_WOBBLE_DEG;
   });
   return powerup;
 }
 
-const EXPLOSION_FRAME_W = 32;
-const EXPLOSION_FRAME_H = 82;
-const EXPLOSION_LIFE_MS = 850;
+// Pickup burst — see main.js's onCollide("player", "powerup", ...). Same
+// one-shot particles() pattern as the effects below, colored to match the
+// weapon-upgrade cue (gold/white) rather than the death effects' fire
+// palette.
+const POWERUP_SPARKLE_COUNT = 14;
+const POWERUP_SPARKLE_LIFE = 0.4;
 
-// One-shot burst animation (the vendored 20-frame Kenney fire sheet, see
-// javascripts/skyfire-squadron/assets/CREDITS.md), tagged "fx" like the
-// platformer's transient effects — never touched by resetRound()'s revival
-// logic, always safe to destroy() on a manual timer. This codebase has no
-// onAnimEnd usage anywhere (see javascripts/game/main.js's death-animation
-// handling, which uses the same manual-countdown idiom) so this follows
-// suit rather than introducing a new pattern.
-export function createExplosion(x, y, scale = 1) {
+export function spawnPowerUpSparkle(x, y) {
   const fx = add([
-    sprite("explosion", { anim: "burst", width: EXPLOSION_FRAME_W * scale, height: EXPLOSION_FRAME_H * scale }),
     pos(x, y),
-    anchor("center"),
+    particles(
+      {
+        max: POWERUP_SPARKLE_COUNT,
+        speed: [60, 160],
+        angle: [0, 360],
+        lifeTime: [0.2, POWERUP_SPARKLE_LIFE],
+        colors: [rgb(255, 238, 150), rgb(140, 210, 255)],
+        opacities: [1, 0],
+      },
+      { lifetime: POWERUP_SPARKLE_LIFE + 0.1, rate: 0, direction: 0, spread: 180 },
+    ),
+    z(9),
+    "fx",
+  ]);
+  fx.emit(POWERUP_SPARKLE_COUNT);
+  fx.onEnd(() => destroy(fx));
+}
+
+// Fiery particle burst — replaces a previous sprite-sheet anim (composited
+// from Kenney's fire00-fire19 frames) that never actually read as fire: the
+// bottom-aligned, non-uniform source frames came out as pale flashing
+// vertical slivers once forced into uniform sliceX/sliceY cells, not a
+// blast. particles() (see javascripts/game/entities.js's fx helpers, the
+// platformer's own equivalent) instead fakes the "boom" with a 3-stop
+// color/opacity gradient per particle — bright core fading through orange to
+// dark ember — which reads correctly at any scale and needs no source art.
+const FIRE_BURST_LIFE = 0.45;
+
+export function spawnFireBurst(x, y, scale = 1) {
+  const count = Math.round(18 * scale);
+  const fx = add([
+    pos(x, y),
+    particles(
+      {
+        max: count,
+        speed: [80 * scale, 220 * scale],
+        angle: [0, 360],
+        lifeTime: [0.22, FIRE_BURST_LIFE],
+        colors: [rgb(255, 250, 210), rgb(255, 140, 40), rgb(110, 40, 20)],
+        opacities: [1, 0.85, 0],
+      },
+      { lifetime: FIRE_BURST_LIFE + 0.1, rate: 0, direction: 0, spread: 180 },
+    ),
     z(11),
     "fx",
-    { lifeMs: EXPLOSION_LIFE_MS },
   ]);
-  fx.onUpdate(() => {
-    fx.lifeMs -= dt() * 1000;
-    if (fx.lifeMs <= 0) destroy(fx);
-  });
+  fx.emit(count);
+  fx.onEnd(() => destroy(fx));
   return fx;
 }
 
@@ -322,8 +379,8 @@ const SMOKE_END_SCALE = 2.2;
 // A single vendored "black smoke" puff frame (see CREDITS.md — one frame of
 // a 25-frame *living*-smoke loop meant to be looped in place, not a
 // grow-from-nothing sequence, so it isn't worth compositing into a sprite
-// sheet the way explosion-sheet.png was). Instead this drives its own
-// grow/drift/fade over time via a manual scale()/pos/opacity transform —
+// sheet). Instead this drives its own grow/drift/fade over time via a manual
+// scale()/pos/opacity transform —
 // same idiom as every other fx object in this codebase (no tween(), see the
 // fire burst above and javascripts/game/main.js's death-animation handling).
 // Named sizeScale, not scale — a local `scale` would shadow Kaplay's own
@@ -357,12 +414,73 @@ function createSmokePuff(x, y, sizeScale) {
   return smoke;
 }
 
-// Richer death effect: the existing fire burst plus a trailing smoke puff
-// that outlives it (SMOKE_LIFE_MS > EXPLOSION_LIFE_MS) — used for actual
-// kills (defeatEnemy()/defeatBoss() in main.js). createExplosion() itself
-// stays fire-only and is still used as-is for the player's non-lethal hit
-// flash, which shouldn't linger with smoke the way a kill does.
-export function createDeathEffect(x, y, scale = 1) {
-  createExplosion(x, y, scale);
+// Fire burst plus a trailing smoke puff that outlives it (SMOKE_LIFE_MS >
+// FIRE_BURST_LIFE) — used for the boss finale's smaller flourish bursts (see
+// defeatBoss() in main.js), which are cosmetic secondary blasts around a
+// boss already mid-shatter, not a full ship breakup. spawnFireBurst() itself
+// stays fire-only and is used as-is for the player's non-lethal hit flash,
+// which shouldn't linger with smoke the way a kill does.
+export function spawnFireSmokeBurst(x, y, scale = 1) {
+  spawnFireBurst(x, y, scale);
   createSmokePuff(x, y, scale);
+}
+
+const FRAGMENT_LIFE_MS = 500;
+
+// Enemy/boss death "shatter": the ship's own sprite cut into 4 fragments
+// (spriteBase is "enemy-<type>" or "boss" — see
+// dev/generate-skyfire-fragments.sh for how the `<spriteBase>-fragment-N.png`
+// tiles were cut) flying outward under a manual gravity/velocity, fading and
+// destroy()ing themselves — mirrors the platformer's spawnEnemyFragments()
+// (javascripts/game/entities.js) almost exactly, adapted only for this
+// game's center coordinates: defeatEnemy()/defeatBoss() in main.js already
+// compute the ship's center (cx/cy), unlike the platformer's top-left
+// enemy.pos, so offsets here are signed around that center rather than
+// added onto a top-left corner. Tagged "fx" — never touched by
+// resetRound()'s "enemy"/"boss" clearing, always destroy()-safe.
+export function spawnShipFragments(spriteBase, cx, cy, config) {
+  const halfW = config.width / 2;
+  const halfH = config.height / 2;
+  const offsets = [
+    [-halfW, -halfH],
+    [0, -halfH],
+    [-halfW, 0],
+    [0, 0],
+  ];
+  offsets.forEach(([ox, oy], i) => {
+    const dirSign = ox < 0 ? -1 : 1;
+    const frag = add([
+      sprite(`${spriteBase}-fragment-${i}`, { width: halfW, height: halfH }),
+      pos(cx + ox, cy + oy),
+      opacity(1),
+      rotate(rand(-30, 30)),
+      z(9),
+      "fx",
+      {
+        fragVel: vec2(dirSign * rand(60, 160), rand(-240, -110)),
+        fragAngVel: rand(-360, 360),
+        lifeMs: FRAGMENT_LIFE_MS,
+      },
+    ]);
+    frag.onUpdate(() => {
+      const dtSec = dt();
+      frag.fragVel.y += 900 * dtSec;
+      frag.pos.x += frag.fragVel.x * dtSec;
+      frag.pos.y += frag.fragVel.y * dtSec;
+      frag.rotateBy(frag.fragAngVel * dtSec);
+      frag.lifeMs -= dtSec * 1000;
+      frag.opacity = Math.max(0, frag.lifeMs / FRAGMENT_LIFE_MS);
+      if (frag.lifeMs <= 0) destroy(frag);
+    });
+  });
+}
+
+// Full kill effect: shatter + fire + trailing smoke, used once at the actual
+// moment a ship dies (defeatEnemy(), and defeatBoss()'s final full-size
+// blast) — see spawnFireSmokeBurst() above for the boss finale's other,
+// fragment-less flourish bursts.
+export function spawnKillEffect(spriteBase, cx, cy, config, scale = 1) {
+  spawnShipFragments(spriteBase, cx, cy, config);
+  spawnFireBurst(cx, cy, scale);
+  createSmokePuff(cx, cy, scale);
 }
